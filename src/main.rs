@@ -11,6 +11,8 @@ fn main() {
         .add_system(bevy::input::system::exit_on_esc_system.system())
         .add_system(paddle_control_by_mouse_system.system())
         .add_system(paddle_control_by_gamepad_system.system())
+        .add_system(ball_movement_system.system())
+        .add_system(ball_collision_system.system())
         .run();
 }
 
@@ -27,21 +29,34 @@ struct GamepadState {
 }
 
 struct Paddle {}
+struct Ball {
+    velocity: Vec3,
+    o_dist: f32,
+}
 
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let texture_handle = asset_server.load("assets/paddle.png").unwrap();
     let camera = Camera2dComponents::default();
     let camera_e = commands.spawn(camera).current_entity().unwrap();
     commands
         .spawn(SpriteComponents {
-            material: materials.add(texture_handle.into()),
+            material: materials.add(asset_server.load("assets/paddle.png").unwrap().into()),
             ..Default::default()
         })
-        .with(Paddle {});
+        .with(Paddle {})
+        // ball
+        .spawn(SpriteComponents {
+            material: materials.add(asset_server.load("assets/ball.png").unwrap().into()),
+            transform: Transform::from_translation(Vec3::new(0.0, -200.0, 1.0)),
+            ..Default::default()
+        })
+        .with(Ball {
+            velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
+            o_dist: 0f32,
+        });
     commands.insert_resource(State {
         cursor_moved_event_reader: Default::default(),
         camera_e,
@@ -68,7 +83,7 @@ fn paddle_control_by_mouse_system(
         let mouse_angle = pos_wld.y().atan2(pos_wld.x());
         let rot = Quat::from_rotation_z(mouse_angle);
         for (_paddle, mut transform) in &mut query.iter() {
-            eprintln!("rot via mouse:  {:?}", rot);
+            eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
             transform.set_rotation(rot);
         }
     }
@@ -136,4 +151,53 @@ fn paddle_control_by_gamepad_system(
             }
         }
     }
+}
+
+fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Transform)>) {
+    // clamp the timestep to stop the ball from escaping when the game starts
+    let delta_seconds = f32::min(0.2, time.delta_seconds);
+
+    for (ball, mut transform) in &mut ball_query.iter() {
+        transform.translate(ball.velocity * delta_seconds);
+    }
+}
+const RADIUS_EXTERN: f32 = 280.0;
+const RADIUS_INTERN: f32 = 108.0;
+
+fn ball_collision_system(mut ball_query: Query<(&mut Ball, &mut Transform)>) {
+    for (mut ball, mut transform) in &mut ball_query.iter() {
+        let o_dist = transform.translation().length();
+        let o_angle = transform
+            .translation()
+            .y()
+            .atan2(transform.translation().x());
+        if o_dist >= RADIUS_EXTERN || o_dist <= RADIUS_INTERN {
+            // FIXME a workaround relocate the ball else strange behaior
+            let n = transform.translation().normalize();
+            let dist = if o_dist >= RADIUS_EXTERN {
+                RADIUS_EXTERN - 2.0
+            } else {
+                RADIUS_INTERN + 2.0
+            };
+            transform.set_translation(n * dist);
+            // reflect on axix origin / current position
+            let dest = compute_reflection(o_angle, transform.translation() - ball.velocity);
+            ball.velocity = dest - transform.translation();
+            // ball.velocity = compute_reflection(o_angle, ball.velocity);
+            // eprintln!(
+            //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
+            //     o_dist,
+            //     ball.o_dist,
+            //     ball.velocity,
+            //     ball.velocity.length()
+            // );
+        }
+        ball.o_dist = o_dist;
+    }
+}
+
+fn compute_reflection(x_axis_angle: f32, position: Vec3) -> Vec3 {
+    let mat_rotate_space = Mat3::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), x_axis_angle);
+    let mat_mirror_x = Mat3::from_cols_array(&[1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]);
+    mat_rotate_space * mat_mirror_x * mat_rotate_space.inverse() * position
 }
