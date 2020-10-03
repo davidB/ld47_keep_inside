@@ -46,6 +46,11 @@ fn setup(
         cursor_moved_event_reader: Default::default(),
         camera_e,
     });
+    commands.insert_resource(ClearColor(Color::rgb(
+        232.0 / 255.0,
+        233.0 / 255.0,
+        235.0 / 255.0,
+    )));
 }
 
 fn paddle_control_by_mouse_system(
