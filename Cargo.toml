@@ -1,0 +1,34 @@
+[package]
+name = "ld47_keep_inside"
+version = "0.1.0-dev"
+authors = ["David Bernard"]
+description = """My game for the gamejam ludumdara 47"""
+#readme = "README.md"
+license = "CC0-1.0"
+repository = "https://github.com/davidB/ld47_keep_inside"
+homepage = "https://github.com/davidB/ld47_keep_inside"
+edition = "2018"
+
+[dependencies]
+bevy = "0.2.1"
+
+# # Compile all the *dependencies* in optimized release mode even if `--release` is not passed in
+# [profile.dev]
+# opt-level = 3
+# debug = false
+
+# # But compile the project itself in debug mode if `--release` is not passed in
+# [profile.dev.package.ld47_keep_inside]
+# opt-level = 0
+# debug = true
+
+# see https://github.com/johnthagen/min-sized-rust
+[profile.release]
+# Enables link time optimizations which tells the compiler to optimize code generation at link time and can result in dropping code that is not used.
+lto = true
+# Stops Rust generating a helpful stack trace and panic message when it panics. With this optimization it will be much harder to figure out what went wrong when the program crashes.
+panic = 'abort'
+# Tells the compiler to optimize for minimal code size. This will make the code less performant but it will take up less space.
+opt-level = 'z'
+# Tells the compiler to use only one code generator instead of running several in parallel. Disabling parallel code generation makes the compilation slower but makes all optimizations possible.
+codegen-units = 1
