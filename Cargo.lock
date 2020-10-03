@@ -1733,6 +1733,7 @@ name = "ld47_keep_inside"
 version = "0.1.0-dev"
 dependencies = [
  "bevy",
+ "bevy_input",
 ]
 
 [[package]]
