@@ -31,7 +31,6 @@ struct GamepadState {
 struct Paddle {}
 struct Ball {
     velocity: Vec3,
-    o_dist: f32,
 }
 
 fn setup(
@@ -50,12 +49,11 @@ fn setup(
         // ball
         .spawn(SpriteComponents {
             material: materials.add(asset_server.load("assets/ball.png").unwrap().into()),
-            transform: Transform::from_translation(Vec3::new(0.0, -200.0, 1.0)),
+            transform: Transform::from_translation(Vec3::new(10.0, -RADIUS_EXTERN + 50.0, 1.0)),
             ..Default::default()
         })
         .with(Ball {
             velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
-            o_dist: 0f32,
         });
     commands.insert_resource(State {
         cursor_moved_event_reader: Default::default(),
@@ -162,37 +160,53 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
     }
 }
 const RADIUS_EXTERN: f32 = 280.0;
+const RADIUS_PADDLE_EXTERN: f32 = 100.0;
 const RADIUS_INTERN: f32 = 108.0;
+const RADIUS_PADDLE_INTERN: f32 = 40.0;
 
-fn ball_collision_system(mut ball_query: Query<(&mut Ball, &mut Transform)>) {
+fn ball_collision_system(
+    mut ball_query: Query<(&mut Ball, &mut Transform)>,
+    mut paddle_query: Query<(&Paddle, &Transform)>,
+) {
     for (mut ball, mut transform) in &mut ball_query.iter() {
         let o_dist = transform.translation().length();
-        let o_angle = transform
-            .translation()
-            .y()
-            .atan2(transform.translation().x());
+
         if o_dist >= RADIUS_EXTERN || o_dist <= RADIUS_INTERN {
-            // FIXME a workaround relocate the ball else strange behaior
-            let n = transform.translation().normalize();
-            let dist = if o_dist >= RADIUS_EXTERN {
-                RADIUS_EXTERN - 2.0
-            } else {
-                RADIUS_INTERN + 2.0
-            };
-            transform.set_translation(n * dist);
-            // reflect on axix origin / current position
-            let dest = compute_reflection(o_angle, transform.translation() - ball.velocity);
-            ball.velocity = dest - transform.translation();
-            // ball.velocity = compute_reflection(o_angle, ball.velocity);
-            // eprintln!(
-            //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
-            //     o_dist,
-            //     ball.o_dist,
-            //     ball.velocity,
-            //     ball.velocity.length()
-            // );
+            for (_, paddle_transform) in &mut paddle_query.iter() {
+                let paddle_extern =
+                    paddle_transform
+                        .value()
+                        .transform_vector3(Vec3::new(RADIUS_EXTERN, 0.0, 0.0));
+                let paddle_dist = (paddle_extern - transform.translation()).length();
+                let collide = (o_dist >= RADIUS_EXTERN && paddle_dist <= RADIUS_PADDLE_EXTERN)
+                    || (o_dist <= RADIUS_INTERN && paddle_dist <= RADIUS_PADDLE_INTERN);
+                if collide {
+                    // FIXME a workaround relocate the ball else strange behaior
+                    let n = transform.translation().normalize();
+                    let dist = if o_dist >= RADIUS_EXTERN {
+                        RADIUS_EXTERN - 2.0
+                    } else {
+                        RADIUS_INTERN + 2.0
+                    };
+                    transform.set_translation(n * dist);
+                    // reflect on axix origin / current position
+                    let o_angle = transform
+                        .translation()
+                        .y()
+                        .atan2(transform.translation().x());
+                    let dest = compute_reflection(o_angle, transform.translation() - ball.velocity);
+                    ball.velocity = dest - transform.translation();
+                    // ball.velocity = compute_reflection(o_angle, ball.velocity);
+                    // eprintln!(
+                    //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
+                    //     o_dist,
+                    //     ball.o_dist,
+                    //     ball.velocity,
+                    //     ball.velocity.length()
+                    // );
+                }
+            }
         }
-        ball.o_dist = o_dist;
     }
 }
 
