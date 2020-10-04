@@ -20,12 +20,12 @@ jobs:
           - imageName: ubuntu-latest
             profile_rustup: default
             profile_ci_flow: ci-static-code-analysis-tasks
-          - imageName: "macOS-latest"
-            profile_rustup: minimal
-            profile_ci_flow: none
-          - imageName: windows-latest
-            profile_rustup: minimal
-            profile_ci_flow: none
+          # - imageName: "macOS-latest"
+          #   profile_rustup: minimal
+          #   profile_ci_flow: none
+          # - imageName: windows-latest
+          #   profile_rustup: minimal
+          #   profile_ci_flow: none
 
     steps:
       - uses: actions-rs/toolchain@v1
