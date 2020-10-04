@@ -1,6 +1,6 @@
 [package]
 name = "ld47_keep_inside"
-version = "0.2.0"
+version = "0.2.1-alpha.0"
 authors = ["David Bernard"]
 description = """My game for Ludum Dare 47"""
 #readme = "README.md"
