@@ -13,6 +13,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_resource(AssetHandles::default())
         .add_resource(Scoreboard { score: 0 })
         .add_startup_system(setup.system())
+        .add_startup_system(setup_ui.system())
         .add_startup_system(gamepad_connection_system.system())
         .add_system(bevy::input::system::exit_on_esc_system.system())
         .add_system(paddle_control_by_mouse_system.system())
@@ -21,6 +22,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(ball_collision_system.system())
         .add_system(start_system.system())
         .add_system(start_control_system.system())
+        .add_system(scoreboard_system.system())
         .run();
     Ok(())
 }
@@ -44,9 +46,73 @@ struct Ball {
     velocity: Vec3,
 }
 
+struct Scoreboard {
+    score: usize,
+}
 
 enum GameStateEvent {
     Start,
+}
+
+fn setup_ui(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut asset_handles: ResMut<crate::AssetHandles>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let font_handle = asset_handles.get_font_main_handle(&asset_server);
+    commands
+        .spawn(UiCameraComponents::default())
+        // scoreboard
+        .spawn(NodeComponents {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                align_items: AlignItems::Center,
+                justify_content: JustifyContent::Center,
+                flex_direction: FlexDirection::ColumnReverse,
+                ..Default::default()
+            },
+            material: materials.add(Color::NONE.into()),
+            draw: Draw {
+                is_transparent: true,
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .with_children(|parent| {
+            parent.spawn(TextComponents {
+                style: Style {
+                    ..Default::default()
+                },
+                text: Text {
+                    value: "0".to_string(),
+                    font: font_handle,
+                    style: TextStyle {
+                        font_size: 100.0,
+                        color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+                    },
+                },
+                ..Default::default()
+            });
+        });
+    // .spawn(TextComponents {
+    //     text: Text {
+    //         font: font_handle,
+    //         value: "Score:".to_string(),
+    //         style: TextStyle {
+    //             color: Color::rgb(0.2, 0.2, 0.8),
+    //             font_size: 50.0,
+    //         },
+    //     },
+    //     style: Style {
+    //         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+    //         align_items: AlignItems::Center,
+    //         justify_content: JustifyContent::Center,
+    //         flex_direction: FlexDirection::ColumnReverse,
+    //         ..Default::default()
+    //     },
+    //     ..Default::default()
+    // });
 }
 
 fn setup(
@@ -62,8 +128,7 @@ fn setup(
             material: asset_handles.get_paddle_handle(&asset_server, &mut materials),
             ..Default::default()
         })
-        .with(Paddle {})
-        ;
+        .with(Paddle {});
     commands.insert_resource(State {
         mouse_button_event_reader: Default::default(),
         cursor_moved_event_reader: Default::default(),
@@ -79,6 +144,7 @@ fn setup(
 
 fn start_system(
     mut commands: Commands,
+    mut scoreboard: ResMut<Scoreboard>,
     mut state: ResMut<State>,
     game_state_events: Res<Events<GameStateEvent>>,
     asset_server: Res<AssetServer>,
@@ -89,6 +155,7 @@ fn start_system(
     for ev in state.game_state_event_reader.iter(&game_state_events) {
         match ev {
             GameStateEvent::Start => {
+                scoreboard.score = 0;
                 // remove existing balls
                 for (entity, _) in &mut query_balls.iter() {
                     commands.despawn(entity);
@@ -235,6 +302,7 @@ const RADIUS_INTERN: f32 = 108.0;
 const RADIUS_PADDLE_INTERN: f32 = 40.0;
 
 fn ball_collision_system(
+    mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
     mut paddle_query: Query<(&Paddle, &Transform)>,
 ) {
@@ -266,6 +334,7 @@ fn ball_collision_system(
                         .atan2(transform.translation().x());
                     let dest = compute_reflection(o_angle, transform.translation() - ball.velocity);
                     ball.velocity = dest - transform.translation();
+                    scoreboard.score += 1;
                     // ball.velocity = compute_reflection(o_angle, ball.velocity);
                     // eprintln!(
                     //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
@@ -284,4 +353,10 @@ fn compute_reflection(x_axis_angle: f32, position: Vec3) -> Vec3 {
     let mat_rotate_space = Mat3::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), x_axis_angle);
     let mat_mirror_x = Mat3::from_cols_array(&[1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]);
     mat_rotate_space * mat_mirror_x * mat_rotate_space.inverse() * position
+}
+
+fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
+    for mut text in &mut query.iter() {
+        text.value = format!("{}", scoreboard.score);
+    }
 }
