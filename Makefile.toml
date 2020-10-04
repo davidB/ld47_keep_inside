@@ -28,7 +28,7 @@ DIST_PATH ="target/dist/${DIST_NAME}"
 DIST_EXEC_EXT = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "", mapping = { windows = ".exe" }}
 #DIST_EXEC_FNAME = "${CARGO_MAKE_CRATE_NAME}${DIST_EXEC_EXT}"
 DIST_EXEC_FNAME = "${CARGO_MAKE_CRATE_NAME}_${DIST_VERSION}-${TARGET}${DIST_EXEC_EXT}"
-GITHUB_RELEASE_VERSION = "v0.8.1"
+GITHUB_RELEASE_VERSION = "v0.7.2"
 GITHUB_RELEASE_PATH = { source = "${CARGO_MAKE_RUST_TARGET_OS}", mapping = { linux = "target/bin/linux/amd64", macos = "target/bin/darwin/amd64", windows = "target/bin/windows/amd64" }}
 # provide by environment
 # GITHUB_TOKEN =
