@@ -33,3 +33,7 @@ panic = 'abort'
 opt-level = 'z'
 # Tells the compiler to use only one code generator instead of running several in parallel. Disabling parallel code generation makes the compilation slower but makes all optimizations possible.
 codegen-units = 1
+
+[patch.crates-io]
+# fork / PR to be able to read asset from include_bytes!
+bevy = { git = "https://github.com/mockersf/bevy", branch = "read_loading" }

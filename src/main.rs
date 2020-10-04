@@ -1,11 +1,15 @@
+mod assets;
+
+use self::assets::AssetHandles;
 use bevy::{prelude::*, window::CursorMoved};
-use bevy_input::gamepad::{Gamepad, GamepadButton, GamepadEvent, GamepadEventType};
+//use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::build()
         .add_default_plugins()
         .init_resource::<GamepadState>()
+        .add_resource(AssetHandles::default())
         .add_startup_system(setup.system())
         .add_startup_system(gamepad_connection_system.system())
         .add_system(bevy::input::system::exit_on_esc_system.system())
@@ -14,6 +18,7 @@ fn main() {
         .add_system(ball_movement_system.system())
         .add_system(ball_collision_system.system())
         .run();
+    Ok(())
 }
 
 struct State {
@@ -36,20 +41,25 @@ struct Ball {
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    mut asset_handles: ResMut<crate::AssetHandles>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let camera = Camera2dComponents::default();
     let camera_e = commands.spawn(camera).current_entity().unwrap();
     commands
         .spawn(SpriteComponents {
-            material: materials.add(asset_server.load("assets/paddle.png").unwrap().into()),
+            material: asset_handles.get_paddle_handle(&asset_server, &mut materials),
             ..Default::default()
         })
         .with(Paddle {})
         // ball
         .spawn(SpriteComponents {
-            material: materials.add(asset_server.load("assets/ball.png").unwrap().into()),
-            transform: Transform::from_translation(Vec3::new(10.0, -RADIUS_EXTERN + 50.0, 1.0)),
+            material: asset_handles.get_ball_handle(&asset_server, &mut materials),
+            transform: Transform::from_translation(Vec3::new(
+                10.0,
+                -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
+                1.0,
+            )),
             ..Default::default()
         })
         .with(Ball {
@@ -143,7 +153,7 @@ fn paddle_control_by_gamepad_system(
                 let angle = y.atan2(x);
                 let rot = Quat::from_rotation_z(angle);
                 for (_paddle, mut transform) in &mut query.iter() {
-                    eprintln!("rot via gamepad:  {:?}", rot);
+                    // eprintln!("rot via gamepad:  {:?}", rot);
                     transform.set_rotation(rot);
                 }
             }
