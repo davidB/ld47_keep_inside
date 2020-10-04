@@ -53,8 +53,6 @@ script = [
 
 [tasks.pre-build]
 linux_alias = "install_deps_linux"
-mac_alias = ""
-windows_alias = ""
 
 [tasks.install_deps_linux]
 install_script = [
