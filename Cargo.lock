@@ -1810,7 +1810,7 @@ checksum = "830d08ce1d1d941e6b30645f1a0eb5643013d835ce3779a5fc208261dbe10f55"
 
 [[package]]
 name = "ld47_keep_inside"
-version = "0.2.2-dev"
+version = "0.2.2"
 dependencies = [
  "bevy",
  "bevy_input 0.2.1 (registry+https://github.com/rust-lang/crates.io-index)",
