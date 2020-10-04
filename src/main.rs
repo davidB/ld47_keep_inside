@@ -49,7 +49,7 @@ struct Ball {
 struct Scoreboard {
     score: usize,
 }
-
+struct ScoreText {}
 enum GameStateEvent {
     Start,
 }
@@ -80,20 +80,22 @@ fn setup_ui(
             ..Default::default()
         })
         .with_children(|parent| {
-            parent.spawn(TextComponents {
-                style: Style {
-                    ..Default::default()
-                },
-                text: Text {
-                    value: "0".to_string(),
-                    font: font_handle,
-                    style: TextStyle {
-                        font_size: 100.0,
-                        color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+            parent
+                .spawn(TextComponents {
+                    style: Style {
+                        ..Default::default()
                     },
-                },
-                ..Default::default()
-            });
+                    text: Text {
+                        value: "0".to_string(),
+                        font: font_handle,
+                        style: TextStyle {
+                            font_size: 100.0,
+                            color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+                        },
+                    },
+                    ..Default::default()
+                })
+                .with(ScoreText {});
         });
     // .spawn(TextComponents {
     //     text: Text {
@@ -355,8 +357,8 @@ fn compute_reflection(x_axis_angle: f32, position: Vec3) -> Vec3 {
     mat_rotate_space * mat_mirror_x * mat_rotate_space.inverse() * position
 }
 
-fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<&mut Text>) {
-    for mut text in &mut query.iter() {
+fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<(&mut Text, &ScoreText)>) {
+    for (mut text, _) in &mut query.iter() {
         text.value = format!("{}", scoreboard.score);
     }
 }
