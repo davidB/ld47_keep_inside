@@ -1,15 +1,17 @@
 mod assets;
 
 use self::assets::AssetHandles;
-use bevy::{prelude::*, window::CursorMoved};
+use bevy::{input::mouse::MouseButtonInput, prelude::*, window::CursorMoved};
 //use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::build()
         .add_default_plugins()
+        .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
         .add_resource(AssetHandles::default())
+        .add_resource(Scoreboard { score: 0 })
         .add_startup_system(setup.system())
         .add_startup_system(gamepad_connection_system.system())
         .add_system(bevy::input::system::exit_on_esc_system.system())
@@ -17,14 +19,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(paddle_control_by_gamepad_system.system())
         .add_system(ball_movement_system.system())
         .add_system(ball_collision_system.system())
+        .add_system(start_system.system())
+        .add_system(start_control_system.system())
         .run();
     Ok(())
 }
 
 struct State {
+    mouse_button_event_reader: EventReader<MouseButtonInput>,
     cursor_moved_event_reader: EventReader<CursorMoved>,
     // need to identify the main camera
     camera_e: Entity,
+    game_state_event_reader: EventReader<GameStateEvent>,
 }
 
 #[derive(Default)]
@@ -36,6 +42,11 @@ struct GamepadState {
 struct Paddle {}
 struct Ball {
     velocity: Vec3,
+}
+
+
+enum GameStateEvent {
+    Start,
 }
 
 fn setup(
@@ -52,28 +63,78 @@ fn setup(
             ..Default::default()
         })
         .with(Paddle {})
-        // ball
-        .spawn(SpriteComponents {
-            material: asset_handles.get_ball_handle(&asset_server, &mut materials),
-            transform: Transform::from_translation(Vec3::new(
-                10.0,
-                -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
-                1.0,
-            )),
-            ..Default::default()
-        })
-        .with(Ball {
-            velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
-        });
+        ;
     commands.insert_resource(State {
+        mouse_button_event_reader: Default::default(),
         cursor_moved_event_reader: Default::default(),
         camera_e,
+        game_state_event_reader: Default::default(),
     });
     commands.insert_resource(ClearColor(Color::rgb(
         232.0 / 255.0,
         233.0 / 255.0,
         235.0 / 255.0,
     )));
+}
+
+fn start_system(
+    mut commands: Commands,
+    mut state: ResMut<State>,
+    game_state_events: Res<Events<GameStateEvent>>,
+    asset_server: Res<AssetServer>,
+    mut asset_handles: ResMut<crate::AssetHandles>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut query_balls: Query<(Entity, &Ball)>,
+) {
+    for ev in state.game_state_event_reader.iter(&game_state_events) {
+        match ev {
+            GameStateEvent::Start => {
+                // remove existing balls
+                for (entity, _) in &mut query_balls.iter() {
+                    commands.despawn(entity);
+                }
+                // ball
+                commands
+                    .spawn(SpriteComponents {
+                        material: asset_handles.get_ball_handle(&asset_server, &mut materials),
+                        transform: Transform::from_translation(Vec3::new(
+                            10.0,
+                            -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
+                            1.0,
+                        )),
+                        ..Default::default()
+                    })
+                    .with(Ball {
+                        velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
+                    });
+            }
+        }
+    }
+}
+
+fn start_control_system(
+    mut state: ResMut<State>,
+    mouse_button_input_events: Res<Events<MouseButtonInput>>,
+    mut game_state_events: ResMut<Events<GameStateEvent>>,
+    gamepad_manager: ResMut<GamepadState>,
+    gamepad_inputs: Res<Input<GamepadButton>>,
+) {
+    for event in state
+        .mouse_button_event_reader
+        .iter(&mouse_button_input_events)
+    {
+        eprintln!("{:?}", event);
+        game_state_events.send(GameStateEvent::Start)
+    }
+    for gamepad in gamepad_manager.gamepads.iter() {
+        if gamepad_inputs.just_released(GamepadButton(*gamepad, GamepadButtonType::South)) {
+            eprintln!(
+                "Released {:?}",
+                GamepadButton(*gamepad, GamepadButtonType::South)
+            );
+            game_state_events.send(GameStateEvent::Start)
+        }
+    }
 }
 
 fn paddle_control_by_mouse_system(
@@ -85,7 +146,6 @@ fn paddle_control_by_mouse_system(
     q_camera: Query<&Transform>,
 ) {
     let camera_transform = q_camera.get::<Transform>(state.camera_e).unwrap();
-
     for ev in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
         let pos_wld = find_mouse_position(ev, &wnds, &camera_transform);
         let mouse_angle = pos_wld.y().atan2(pos_wld.x());
