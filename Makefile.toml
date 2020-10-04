@@ -51,7 +51,7 @@ script = [
   '''
 ]
 
-[tasks.zip-release-ci-flow]
+[tasks.release-ci-flow]
 description = "Compiles the binary in release mode and zips it up"
 category = "CI"
 condition = { env_set = ["TARGET"] }
@@ -89,7 +89,7 @@ script = [
   strip ${DIST_PATH}/${DIST_EXEC_FNAME}
   cp LICENSE* ${DIST_PATH}/ || echo "ignore if no LICENSE"
   # "cp README* ${DIST_PATH}/
-  tar -czvf "${DIST_PATH}${DIST_EXT}" -C "${DIST_PATH}" "${CARGO_MAKE_CRATE_NAME}"
+  tar -czvf "${DIST_PATH}${DIST_EXT}" -C "${DIST_PATH}" "."
   '''
 ]
 
