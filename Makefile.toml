@@ -272,7 +272,7 @@ script = [
   $ErrorActionPreference = "Stop"
   $env:GITHUB_USER,$env:GITHUB_REPO=$($env:GITHUB_REPOSITORY).split("/")
   & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" release --tag "$env:DIST_VERSION"
-  & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" upload --tag "$env:DIST_VERSION" --name ($env:DIST_EXEC_FNAME) --file ($env:DIST_PATH + "\" + $env:DIST_EXEC_FNAME)
+  & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" upload --tag "$env:DIST_VERSION" --name ($env:DIST_EXEC_FNAME) --file ($env:DIST_PATH + "/" + $env:DIST_EXEC_FNAME)
   '''
 ]
 dependencies = [
