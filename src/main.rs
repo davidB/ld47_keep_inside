@@ -340,13 +340,21 @@ fn ball_collision_system(
 
         if o_dist >= RADIUS_EXTERN || o_dist <= RADIUS_INTERN {
             for (_, paddle_transform) in &mut paddle_query.iter() {
-                let paddle_extern =
-                    paddle_transform
-                        .value()
-                        .transform_vector3(Vec3::new(RADIUS_EXTERN, 0.0, 0.0));
-                let paddle_dist = (paddle_extern - transform.translation()).length();
-                let collide = (o_dist >= RADIUS_EXTERN && paddle_dist <= RADIUS_PADDLE_EXTERN)
-                    || (o_dist <= RADIUS_INTERN && paddle_dist <= RADIUS_PADDLE_INTERN);
+                let paddle_extern_dist = (paddle_transform.value().transform_vector3(Vec3::new(
+                    RADIUS_EXTERN,
+                    0.0,
+                    0.0,
+                )) - transform.translation())
+                .length();
+                let paddle_intern_dist = (paddle_transform.value().transform_vector3(Vec3::new(
+                    RADIUS_INTERN,
+                    0.0,
+                    0.0,
+                )) - transform.translation())
+                .length();
+                let collide = (o_dist >= RADIUS_EXTERN
+                    && paddle_extern_dist <= RADIUS_PADDLE_EXTERN)
+                    || (o_dist <= RADIUS_INTERN && paddle_intern_dist <= RADIUS_PADDLE_INTERN);
                 if collide {
                     // FIXME a workaround relocate the ball else strange behaior
                     let n = transform.translation().normalize();
