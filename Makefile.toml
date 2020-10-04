@@ -28,7 +28,7 @@ DIST_PATH ="target/dist/${DIST_NAME}"
 DIST_EXEC_EXT = { source = "${CARGO_MAKE_RUST_TARGET_OS}", default_value = "", mapping = { windows = ".exe" }}
 #DIST_EXEC_FNAME = "${CARGO_MAKE_CRATE_NAME}${DIST_EXEC_EXT}"
 DIST_EXEC_FNAME = "${CARGO_MAKE_CRATE_NAME}_${DIST_VERSION}-${TARGET}${DIST_EXEC_EXT}"
-GITHUB_RELEASE_VERSION = "v0.7.2"
+GITHUB_RELEASE_VERSION = "v0.8.1"
 GITHUB_RELEASE_PATH = { source = "${CARGO_MAKE_RUST_TARGET_OS}", mapping = { linux = "target/bin/linux/amd64", macos = "target/bin/darwin/amd64", windows = "target/bin/windows/amd64" }}
 # provide by environment
 # GITHUB_TOKEN =
@@ -119,7 +119,7 @@ script = [
   $ErrorActionPreference = "Stop"
   Remove-Item -Recurse -Force "${env:DIST_PATH}" -ErrorAction SilentlyContinue
   New-Item -ItemType directory -Path "${env:DIST_PATH}"
-  Copy-Item -Path "target\\${env:TARGET}\\release\\${env:CARGO_MAKE_CRATE_NAME}.exe" -Destination "${env:DIST_PATH}\\${DIST_EXEC_FNAME}"
+  Copy-Item -Path "target\\${env:TARGET}\\release\\${env:CARGO_MAKE_CRATE_NAME}.exe" -Destination "${env:DIST_PATH}\\${env:DIST_EXEC_FNAME}"
   Copy-Item -Path "LICENSE*" -Destination "${env:DIST_PATH}"
   # Copy-Item -Path "README*" -Destination "${env:DIST_PATH}"
   Compress-Archive -Path "${env:DIST_PATH}\\*" -DestinationPath "${env:DIST_PATH}${env:DIST_EXT}" -CompressionLevel Optimal -Force
@@ -252,6 +252,7 @@ script= [
   export GITHUB_REPO=$(basename $GITHUB_REPOSITORY)
   ${GITHUB_RELEASE_PATH}/github-release release --tag "${DIST_VERSION}" || echo "ignore error"
   ${GITHUB_RELEASE_PATH}/github-release upload --tag "${DIST_VERSION}" --name "${DIST_EXEC_FNAME}" --file "${DIST_PATH}/${DIST_EXEC_FNAME}"
+  ${GITHUB_RELEASE_PATH}/github-release upload --tag "${DIST_VERSION}" --name "${DIST_NAME}${DIST_EXT}" --file "${DIST_PATH}${DIST_EXT}"  
   '''
 ]
 dependencies = [
@@ -273,6 +274,7 @@ script = [
   $env:GITHUB_USER,$env:GITHUB_REPO=$($env:GITHUB_REPOSITORY).split("/")
   & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" release --tag "$env:DIST_VERSION"
   & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" upload --tag "$env:DIST_VERSION" --name ($env:DIST_EXEC_FNAME) --file ($env:DIST_PATH + "\\" + $env:DIST_EXEC_FNAME)
+  & "${env:GITHUB_RELEASE_PATH}\\github-release.exe" upload --tag "$env:DIST_VERSION" --name ($env:DIST_NAME + $env:DIST_EXT) --file ($env:DIST_PATH + $env:DIST_EXT)
   '''
 ]
 dependencies = [
