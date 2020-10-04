@@ -51,7 +51,7 @@ script = [
   '''
 ]
 
-[tasks.install_deps]
+[tasks.pre-build]
 linux_alias = "install_deps_linux"
 mac_alias = ""
 windows_alias = ""
@@ -59,6 +59,7 @@ windows_alias = ""
 [tasks.install_deps_linux]
 install_script = [
 '''
+echo "install native deps for linux"
 if [ "$(grep -Ei 'debian|buntu|mint' /etc/*release)" ]; then
   sudo apt-get update || true
   sudo apt-get install -y pkg-config libx11-dev libasound2-dev libudev-dev
@@ -89,7 +90,7 @@ args = [
   "${TARGET}"
 ]
 dependencies = [
-  "install_deps",
+  "pre-build",
 ]
 
 [tasks.zip-release-binary-for-target]
