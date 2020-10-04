@@ -201,7 +201,7 @@ fn start_system(
                         ..Default::default()
                     })
                     .with(Ball {
-                        velocity: 400.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
+                        velocity: 410.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
                     });
             }
         }
