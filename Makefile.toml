@@ -51,6 +51,21 @@ script = [
   '''
 ]
 
+[tasks.install_deps]
+linux_alias = "install_deps_linux"
+mac_alias = ""
+windows_alias = ""
+
+[tasks.install_deps_linux]
+install_script = [
+'''
+if [ "$(grep -Ei 'debian|buntu|mint' /etc/*release)" ]; then
+  sudo apt-get update || true
+  sudo apt-get install -y pkg-config libx11-dev libasound2-dev libudev-dev
+fi
+'''
+]
+
 [tasks.release-ci-flow]
 description = "Compiles the binary in release mode and zips it up"
 category = "CI"
@@ -72,6 +87,9 @@ args = [
   "--all-features",
   "--target",
   "${TARGET}"
+]
+dependencies = [
+  "install_deps",
 ]
 
 [tasks.zip-release-binary-for-target]
