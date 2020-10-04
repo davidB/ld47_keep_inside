@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - master
+      - main
       - "releases/*"
     # tags-ignore:
     #   - "[0-9]+.[0-9]+.[0-9]+*"
