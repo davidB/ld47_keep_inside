@@ -11,7 +11,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
         .add_resource(AssetHandles::default())
-        .add_resource(Scoreboard { score: 0 })
+        .add_resource(Scoreboard { score: 0, best: 0 })
         .add_startup_system(setup.system())
         .add_startup_system(setup_ui.system())
         .add_startup_system(gamepad_connection_system.system())
@@ -48,8 +48,10 @@ struct Ball {
 
 struct Scoreboard {
     score: usize,
+    best: usize,
 }
 struct ScoreText {}
+struct ScoreBestText {}
 enum GameStateEvent {
     Start,
 }
@@ -60,7 +62,8 @@ fn setup_ui(
     mut asset_handles: ResMut<crate::AssetHandles>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let font_handle = asset_handles.get_font_main_handle(&asset_server);
+    let font_score_handle = asset_handles.get_font_score_handle(&asset_server);
+    let font_text_handle = asset_handles.get_font_text_handle(&asset_server);
     commands
         .spawn(UiCameraComponents::default())
         // scoreboard
@@ -87,7 +90,7 @@ fn setup_ui(
                     },
                     text: Text {
                         value: "0".to_string(),
-                        font: font_handle,
+                        font: font_score_handle,
                         style: TextStyle {
                             font_size: 100.0,
                             color: Color::rgb_u8(0x00, 0xAA, 0xAA),
@@ -96,25 +99,48 @@ fn setup_ui(
                     ..Default::default()
                 })
                 .with(ScoreText {});
-        });
-    // .spawn(TextComponents {
-    //     text: Text {
-    //         font: font_handle,
-    //         value: "Score:".to_string(),
-    //         style: TextStyle {
-    //             color: Color::rgb(0.2, 0.2, 0.8),
-    //             font_size: 50.0,
-    //         },
-    //     },
-    //     style: Style {
-    //         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-    //         align_items: AlignItems::Center,
-    //         justify_content: JustifyContent::Center,
-    //         flex_direction: FlexDirection::ColumnReverse,
-    //         ..Default::default()
-    //     },
-    //     ..Default::default()
-    // });
+        })
+        .spawn(TextComponents {
+            text: Text {
+                font: font_text_handle,
+                value: "Click or Button (A) on Gamepad\nto spawn a ball and to start".to_string(),
+                style: TextStyle {
+                    color: Color::rgb(0.2, 0.2, 0.8),
+                    font_size: 20.0,
+                },
+            },
+            style: Style {
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    top: Val::Px(5.0),
+                    left: Val::Px(5.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .spawn(TextComponents {
+            text: Text {
+                font: font_text_handle,
+                value: "Best: 0".to_string(),
+                style: TextStyle {
+                    color: Color::rgb(0.2, 0.2, 0.8),
+                    font_size: 20.0,
+                },
+            },
+            style: Style {
+                position_type: PositionType::Absolute,
+                position: Rect {
+                    top: Val::Px(5.0),
+                    right: Val::Px(5.0),
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ..Default::default()
+        })
+        .with(ScoreBestText {});
 }
 
 fn setup(
@@ -157,6 +183,7 @@ fn start_system(
     for ev in state.game_state_event_reader.iter(&game_state_events) {
         match ev {
             GameStateEvent::Start => {
+                scoreboard.best = scoreboard.best.max(scoreboard.score);
                 scoreboard.score = 0;
                 // remove existing balls
                 for (entity, _) in &mut query_balls.iter() {
@@ -188,19 +215,19 @@ fn start_control_system(
     gamepad_manager: ResMut<GamepadState>,
     gamepad_inputs: Res<Input<GamepadButton>>,
 ) {
-    for event in state
+    for _event in state
         .mouse_button_event_reader
         .iter(&mouse_button_input_events)
     {
-        eprintln!("{:?}", event);
+        // eprintln!("{:?}", event);
         game_state_events.send(GameStateEvent::Start)
     }
     for gamepad in gamepad_manager.gamepads.iter() {
         if gamepad_inputs.just_released(GamepadButton(*gamepad, GamepadButtonType::South)) {
-            eprintln!(
-                "Released {:?}",
-                GamepadButton(*gamepad, GamepadButtonType::South)
-            );
+            // eprintln!(
+            //     "Released {:?}",
+            //     GamepadButton(*gamepad, GamepadButtonType::South)
+            // );
             game_state_events.send(GameStateEvent::Start)
         }
     }
@@ -220,7 +247,7 @@ fn paddle_control_by_mouse_system(
         let mouse_angle = pos_wld.y().atan2(pos_wld.x());
         let rot = Quat::from_rotation_z(mouse_angle);
         for (_paddle, mut transform) in &mut query.iter() {
-            eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
+            //eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
             transform.set_rotation(rot);
         }
     }
@@ -252,11 +279,11 @@ fn gamepad_connection_system(
         match &event {
             GamepadEvent(gamepad, GamepadEventType::Connected) => {
                 gamepad_manager.gamepads.insert(*gamepad);
-                println!("Connected {:?}", gamepad);
+                //eprintln!("Connected {:?}", gamepad);
             }
             GamepadEvent(gamepad, GamepadEventType::Disconnected) => {
                 gamepad_manager.gamepads.remove(gamepad);
-                println!("Disconnected {:?}", gamepad);
+                //eprintln!("Disconnected {:?}", gamepad);
             }
         }
     }
@@ -357,8 +384,15 @@ fn compute_reflection(x_axis_angle: f32, position: Vec3) -> Vec3 {
     mat_rotate_space * mat_mirror_x * mat_rotate_space.inverse() * position
 }
 
-fn scoreboard_system(scoreboard: Res<Scoreboard>, mut query: Query<(&mut Text, &ScoreText)>) {
-    for (mut text, _) in &mut query.iter() {
+fn scoreboard_system(
+    scoreboard: Res<Scoreboard>,
+    mut query_scoretext: Query<(&mut Text, &ScoreText)>,
+    mut query_scorebesttext: Query<(&mut Text, &ScoreBestText)>,
+) {
+    for (mut text, _) in &mut query_scoretext.iter() {
         text.value = format!("{}", scoreboard.score);
+    }
+    for (mut text, _) in &mut query_scorebesttext.iter() {
+        text.value = format!("Best: {}", scoreboard.best);
     }
 }
