@@ -1,0 +1,94 @@
+name: release-flow
+
+# https://help.github.com/en/articles/events-that-trigger-workflows#release-event-release
+# on: release
+
+# on:
+#   push:
+#     tags:
+#       - "[0-9]+.[0-9]+.[0-9]+*"
+on:
+  workflow_dispatch:
+
+jobs:
+  build-macOS:
+    runs-on: macOS-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Build and release
+        run: |
+          cargo build --release
+          mkdir -p ld47_keep_inside.app/Contents/MacOS
+          cp target/release/ld47_keep_inside ld47_keep_inside.app/Contents/MacOS/
+          strip ld47_keep_inside.app/Contents/MacOS/ld47_keep_inside
+          hdiutil create -fs HFS+ -volname "ld47_keep_inside" -srcfolder ld47_keep_inside.app ld47_keep_inside.dmg
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ld47_keep_inside.dmg
+          asset_name: ld47_keep_inside-macOS.dmg
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-linux:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Install Dependencies
+        run: sudo apt-get install pkg-config libx11-dev libasound2-dev libudev-dev
+      - name: Build and release
+        run: |
+          cargo build --release
+          strip target/release/ld47_keep_inside
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/ld47_keep_inside
+          dest: ld47_keep_inside-linux.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ld47_keep_inside-linux.zip
+          asset_name: ld47_keep_inside-linux.zip
+          tag: ${{ github.ref }}
+          overwrite: true
+
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: seanmiddleditch/gha-setup-ninja@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.x"
+      - name: Build and release
+        run: |
+          cargo build --release
+      - uses: papeloto/action-zip@v1
+        with:
+          files: target/release/ld47_keep_inside.exe
+          dest: ld47_keep_inside-windows.zip
+      - name: Upload binaries to release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ld47_keep_inside-windows.zip
+          asset_name: ld47_keep_inside-windows.zip
+          tag: ${{ github.ref }}
+          overwrite: true
