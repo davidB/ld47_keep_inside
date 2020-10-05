@@ -325,10 +325,12 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
         transform.translate(ball.velocity * delta_seconds);
     }
 }
-const RADIUS_EXTERN: f32 = 280.0;
+const RADIUS_EXTERN: f32 = 285.0;
 const RADIUS_PADDLE_EXTERN: f32 = 100.0;
+const HEIGHT_PADDLE_EXTERN: f32 = 10.0;
 const RADIUS_INTERN: f32 = 108.0;
 const RADIUS_PADDLE_INTERN: f32 = 40.0;
+const HEIGHT_PADDLE_INTERN: f32 = 4.0;
 
 fn ball_collision_system(
     mut scoreboard: ResMut<Scoreboard>,
@@ -352,13 +354,13 @@ fn ball_collision_system(
                     0.0,
                 )) - transform.translation())
                 .length();
-                let collide = (o_dist >= RADIUS_EXTERN
-                    && paddle_extern_dist <= RADIUS_PADDLE_EXTERN)
-                    || (o_dist <= RADIUS_INTERN && paddle_intern_dist <= RADIUS_PADDLE_INTERN);
-                if collide {
+                let collide_extern = (o_dist - RADIUS_EXTERN).abs() <= HEIGHT_PADDLE_EXTERN
+                    && paddle_extern_dist <= RADIUS_PADDLE_EXTERN;
+                let collide_intern = (o_dist - RADIUS_INTERN).abs() <= HEIGHT_PADDLE_INTERN && paddle_intern_dist <= RADIUS_PADDLE_INTERN;
+                if collide_extern || collide_intern {
                     // FIXME a workaround relocate the ball else strange behaior
                     let n = transform.translation().normalize();
-                    let dist = if o_dist >= RADIUS_EXTERN {
+                    let dist = if collide_extern {
                         RADIUS_EXTERN - 2.0
                     } else {
                         RADIUS_INTERN + 2.0
