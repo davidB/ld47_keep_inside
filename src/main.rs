@@ -356,7 +356,8 @@ fn ball_collision_system(
                 .length();
                 let collide_extern = (o_dist - RADIUS_EXTERN).abs() <= HEIGHT_PADDLE_EXTERN
                     && paddle_extern_dist <= RADIUS_PADDLE_EXTERN;
-                let collide_intern = (o_dist - RADIUS_INTERN).abs() <= HEIGHT_PADDLE_INTERN && paddle_intern_dist <= RADIUS_PADDLE_INTERN;
+                let collide_intern = (o_dist - RADIUS_INTERN).abs() <= HEIGHT_PADDLE_INTERN
+                    && paddle_intern_dist <= RADIUS_PADDLE_INTERN;
                 if collide_extern || collide_intern {
                     // FIXME a workaround relocate the ball else strange behaior
                     let n = transform.translation().normalize();
