@@ -143,53 +143,43 @@ checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
 [[package]]
 name = "bevy"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_audio",
  "bevy_core",
  "bevy_diagnostic",
  "bevy_dynamic_plugin",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_gilrs",
  "bevy_gltf",
- "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_pbr",
  "bevy_property",
  "bevy_render",
  "bevy_scene",
  "bevy_sprite",
- "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_text",
  "bevy_transform",
  "bevy_type_registry",
  "bevy_ui",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_wgpu",
  "bevy_window",
  "bevy_winit",
 ]
 
 [[package]]
-name = "bevy-glsl-to-spirv"
-version = "0.1.7"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f36b150daa7006ccdaf896d9671a2b3630a2a9aa2c13174acf6493530efc3a3"
-dependencies = [
- "cmake",
- "tempfile",
-]
-
-[[package]]
 name = "bevy_app"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "instant",
  "log",
  "serde",
@@ -217,16 +207,16 @@ dependencies = [
 [[package]]
 name = "bevy_asset"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "anyhow",
  "async-trait",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
- "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "crossbeam-channel",
  "js-sys",
  "log",
@@ -243,12 +233,12 @@ dependencies = [
 [[package]]
 name = "bevy_audio"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "anyhow",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "parking_lot",
  "rodio",
 ]
@@ -256,16 +246,16 @@ dependencies = [
 [[package]]
 name = "bevy_core"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
- "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "instant",
  "log",
 ]
@@ -273,7 +263,7 @@ dependencies = [
 [[package]]
 name = "bevy_derive"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "Inflector",
  "proc-macro-crate",
@@ -298,12 +288,12 @@ dependencies = [
 [[package]]
 name = "bevy_diagnostic"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_core",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "instant",
  "parking_lot",
  "uuid",
@@ -312,9 +302,9 @@ dependencies = [
 [[package]]
 name = "bevy_dynamic_plugin"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "libloading 0.6.3",
  "log",
 ]
@@ -322,11 +312,11 @@ dependencies = [
 [[package]]
 name = "bevy_ecs"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_hecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_hecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_tasks 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "downcast-rs",
  "fixedbitset",
  "log",
@@ -353,11 +343,11 @@ dependencies = [
 [[package]]
 name = "bevy_gilrs"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "gilrs",
  "log",
 ]
@@ -365,11 +355,11 @@ dependencies = [
 [[package]]
 name = "bevy_gltf"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "anyhow",
  "base64",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_render",
  "gltf",
@@ -379,10 +369,10 @@ dependencies = [
 [[package]]
 name = "bevy_hecs"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_hecs_macros 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_hecs_macros 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "lazy_static",
  "rand",
  "serde",
@@ -404,7 +394,7 @@ dependencies = [
 [[package]]
 name = "bevy_hecs_macros"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -427,12 +417,12 @@ dependencies = [
 [[package]]
 name = "bevy_input"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
 ]
 
 [[package]]
@@ -450,7 +440,7 @@ dependencies = [
 [[package]]
 name = "bevy_math"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "glam",
 ]
@@ -467,14 +457,14 @@ dependencies = [
 [[package]]
 name = "bevy_pbr"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
- "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
  "bevy_render",
  "bevy_transform",
@@ -485,12 +475,12 @@ dependencies = [
 [[package]]
 name = "bevy_property"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property_derive",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "erased-serde",
  "ron",
  "serde",
@@ -500,7 +490,7 @@ dependencies = [
 [[package]]
 name = "bevy_property_derive"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
@@ -511,20 +501,19 @@ dependencies = [
 [[package]]
 name = "bevy_render"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "anyhow",
- "bevy-glsl-to-spirv",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
- "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
  "bevy_transform",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_window",
  "bitflags",
  "downcast-rs",
@@ -545,15 +534,15 @@ dependencies = [
 [[package]]
 name = "bevy_scene"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "anyhow",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "parking_lot",
  "ron",
  "serde",
@@ -564,17 +553,17 @@ dependencies = [
 [[package]]
 name = "bevy_sprite"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_render",
  "bevy_transform",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "guillotiere",
  "rectangle-pack",
  "thiserror",
@@ -583,7 +572,7 @@ dependencies = [
 [[package]]
 name = "bevy_tasks"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "async-channel",
  "async-executor",
@@ -609,30 +598,30 @@ dependencies = [
 [[package]]
 name = "bevy_text"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "ab_glyph",
  "anyhow",
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_render",
  "bevy_sprite",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
 ]
 
 [[package]]
 name = "bevy_transform"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "log",
  "smallvec",
 ]
@@ -640,12 +629,12 @@ dependencies = [
 [[package]]
 name = "bevy_type_registry"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_property",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "parking_lot",
  "serde",
 ]
@@ -653,21 +642,21 @@ dependencies = [
 [[package]]
 name = "bevy_ui"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
- "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_derive 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_render",
  "bevy_sprite",
  "bevy_text",
  "bevy_transform",
  "bevy_type_registry",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_window",
  "stretch",
 ]
@@ -675,7 +664,7 @@ dependencies = [
 [[package]]
 name = "bevy_utils"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
  "ahash",
 ]
@@ -692,15 +681,15 @@ dependencies = [
 [[package]]
 name = "bevy_wgpu"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_asset",
  "bevy_core",
  "bevy_diagnostic",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_render",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_window",
  "bevy_winit",
  "crossbeam-channel",
@@ -714,12 +703,12 @@ dependencies = [
 [[package]]
 name = "bevy_window"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "uuid",
  "web-sys",
 ]
@@ -727,13 +716,13 @@ dependencies = [
 [[package]]
 name = "bevy_winit"
 version = "0.2.1"
-source = "git+https://github.com/mockersf/bevy?branch=read_loading#79ffd641bf2f4c04b0f77e1904199fa990cc32bf"
+source = "git+https://github.com/mockersf/bevy?branch=ld#6dee2f4df4beed29278f3df2aafeab4e92faf00a"
 dependencies = [
- "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
- "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=read_loading)",
+ "bevy_app 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_ecs 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_input 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_math 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
+ "bevy_utils 0.2.1 (git+https://github.com/mockersf/bevy?branch=ld)",
  "bevy_window",
  "log",
  "wasm-bindgen",
@@ -2443,15 +2432,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "26412eb97c6b088a6997e05f69403a802a92d520de2f8e63c2b65f9e0f47c4e8"
 
 [[package]]
-name = "remove_dir_all"
-version = "0.5.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3acd125665422973a33ac9d3dd2df85edad0f4ae9b00dafb1a05e43a9f5ef8e7"
-dependencies = [
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "rodio"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2768,20 +2748,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-xid",
-]
-
-[[package]]
-name = "tempfile"
-version = "3.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a6e24d9338a0a5be79593e2fa15a648add6138caa803e2d5bc782c371732ca9"
-dependencies = [
- "cfg-if",
- "libc",
- "rand",
- "redox_syscall",
- "remove_dir_all",
- "winapi 0.3.9",
 ]
 
 [[package]]
