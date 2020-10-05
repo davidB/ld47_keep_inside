@@ -53,6 +53,7 @@ script = [
 
 [tasks.pre-build]
 linux_alias = "install_deps_linux"
+linux_alias = "install_deps_windows"
 
 [tasks.install_deps_linux]
 install_script = [
@@ -65,6 +66,29 @@ fi
 '''
 ]
 
+[tasks.install_deps_windows]
+script_runner = "powershell"
+script_extension = "ps1"
+script = [
+  '''
+  Set-PSDebug -Strict # -Trace 1
+  $ErrorActionPreference = "Stop"
+  $url ="https://github.com/ninja-build/ninja/releases/download/v1.10.1/ninja-win.zip"
+  $output = "ninja-win.zip"
+  cd target
+  [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+  echo $url
+  Invoke-WebRequest -Uri $url -OutFile $output
+  Expand-Archive -LiteralPath $output -Destination . -Force
+
+  $addPath = Get-Location
+  $regexAddPath = [regex]::Escape($addPath)
+  $arrPath = $env:Path -split ';' | Where-Object {$_ -notMatch "^$regexAddPath\\?"}
+  $env:Path = ($arrPath + $addPath) -join ';'
+  '''
+]
+
+https://github.com/ninja-build/ninja/releases/download/v1.10.1/ninja-win.zip
 [tasks.release-ci-flow]
 description = "Compiles the binary in release mode and zips it up"
 category = "CI"
@@ -252,7 +276,7 @@ script= [
   export GITHUB_REPO=$(basename $GITHUB_REPOSITORY)
   ${GITHUB_RELEASE_PATH}/github-release release --tag "${DIST_VERSION}" || echo "ignore error"
   ${GITHUB_RELEASE_PATH}/github-release upload --tag "${DIST_VERSION}" --name "${DIST_EXEC_FNAME}" --file "${DIST_PATH}/${DIST_EXEC_FNAME}"
-  ${GITHUB_RELEASE_PATH}/github-release upload --tag "${DIST_VERSION}" --name "${DIST_NAME}${DIST_EXT}" --file "${DIST_PATH}${DIST_EXT}"  
+  ${GITHUB_RELEASE_PATH}/github-release upload --tag "${DIST_VERSION}" --name "${DIST_NAME}${DIST_EXT}" --file "${DIST_PATH}${DIST_EXT}"
   '''
 ]
 dependencies = [
