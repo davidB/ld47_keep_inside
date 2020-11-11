@@ -10,8 +10,8 @@ homepage = "https://github.com/davidB/ld47_keep_inside"
 edition = "2018"
 
 [dependencies]
-bevy = "0.2.1"
-bevy_input = "0.2.1"
+bevy = "0.3.0"
+bevy_input = "0.3.0"
 
 # # Compile all the *dependencies* in optimized release mode even if `--release` is not passed in
 # [profile.dev]
@@ -34,6 +34,6 @@ opt-level = 'z'
 # Tells the compiler to use only one code generator instead of running several in parallel. Disabling parallel code generation makes the compilation slower but makes all optimizations possible.
 codegen-units = 1
 
-[patch.crates-io]
-# fork / PR to be able to read asset from include_bytes!
-bevy = { git = "https://github.com/mockersf/bevy", branch = "ld" }
+# [patch.crates-io]
+# # fork / PR to be able to read asset from include_bytes!
+# bevy = { git = "https://github.com/mockersf/bevy", branch = "ld" }

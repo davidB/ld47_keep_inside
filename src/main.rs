@@ -1,16 +1,18 @@
-mod assets;
+// mod assets;
 
-use self::assets::AssetHandles;
-use bevy::{input::mouse::MouseButtonInput, prelude::*, window::CursorMoved};
+// use self::assets::AssetHandles;
+use bevy::{
+    input::mouse::MouseButtonInput, prelude::*, render::camera::Camera, window::CursorMoved,
+};
 //use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::build()
-        .add_default_plugins()
+        .add_resource(Msaa { samples: 4 })
+        .add_plugins(DefaultPlugins)
         .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
-        .add_resource(AssetHandles::default())
         .add_resource(Scoreboard { score: 0, best: 0 })
         .add_startup_system(setup.system())
         .add_startup_system(setup_ui.system())
@@ -59,11 +61,10 @@ enum GameStateEvent {
 fn setup_ui(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut asset_handles: ResMut<crate::AssetHandles>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
-    let font_score_handle = asset_handles.get_font_score_handle(&asset_server);
-    let font_text_handle = asset_handles.get_font_text_handle(&asset_server);
+    let font_score_handle = asset_server.load("Eduardo-Barrasa.ttf");
+    let font_text_handle = asset_server.load("FiraMono-Medium.ttf");
     commands
         .spawn(UiCameraComponents::default())
         // scoreboard
@@ -102,7 +103,7 @@ fn setup_ui(
         })
         .spawn(TextComponents {
             text: Text {
-                font: font_text_handle,
+                font: font_text_handle.clone(),
                 value: "Click or Button (A) on Gamepad\nto spawn a ball and to start".to_string(),
                 style: TextStyle {
                     color: Color::rgb(0.2, 0.2, 0.8),
@@ -146,14 +147,13 @@ fn setup_ui(
 fn setup(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut asset_handles: ResMut<crate::AssetHandles>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let camera = Camera2dComponents::default();
     let camera_e = commands.spawn(camera).current_entity().unwrap();
     commands
         .spawn(SpriteComponents {
-            material: asset_handles.get_paddle_handle(&asset_server, &mut materials),
+            material: materials.add(asset_server.load("paddle.png").into()),
             ..Default::default()
         })
         .with(Paddle {});
@@ -176,9 +176,8 @@ fn start_system(
     mut state: ResMut<State>,
     game_state_events: Res<Events<GameStateEvent>>,
     asset_server: Res<AssetServer>,
-    mut asset_handles: ResMut<crate::AssetHandles>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut query_balls: Query<(Entity, &Ball)>,
+    query_balls: Query<(Entity, &Ball)>,
 ) {
     for ev in state.game_state_event_reader.iter(&game_state_events) {
         match ev {
@@ -186,13 +185,13 @@ fn start_system(
                 scoreboard.best = scoreboard.best.max(scoreboard.score);
                 scoreboard.score = 0;
                 // remove existing balls
-                for (entity, _) in &mut query_balls.iter() {
+                for (entity, _) in query_balls.iter() {
                     commands.despawn(entity);
                 }
                 // ball
                 commands
                     .spawn(SpriteComponents {
-                        material: asset_handles.get_ball_handle(&asset_server, &mut materials),
+                        material: materials.add(asset_server.load("ball.png").into()),
                         transform: Transform::from_translation(Vec3::new(
                             10.0,
                             -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
@@ -239,16 +238,17 @@ fn paddle_control_by_mouse_system(
     wnds: Res<Windows>,
     mut query: Query<(&Paddle, &mut Transform)>,
     // query to get camera components
-    q_camera: Query<&Transform>,
+    q_camera: Query<(&Camera, &Transform)>,
 ) {
-    let camera_transform = q_camera.get::<Transform>(state.camera_e).unwrap();
-    for ev in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
-        let pos_wld = find_mouse_position(ev, &wnds, &camera_transform);
-        let mouse_angle = pos_wld.y().atan2(pos_wld.x());
-        let rot = Quat::from_rotation_z(mouse_angle);
-        for (_paddle, mut transform) in &mut query.iter() {
-            //eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
-            transform.set_rotation(rot);
+    if let Ok((_, camera_transform)) = q_camera.get(state.camera_e) {
+        for ev in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
+            let pos_wld = find_mouse_position(ev, &wnds, &camera_transform);
+            let mouse_angle = pos_wld.y().atan2(pos_wld.x());
+            let rot = Quat::from_rotation_z(mouse_angle);
+            for (_paddle, mut transform) in query.iter_mut() {
+                //eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
+                transform.rotation = rot;
+            }
         }
     }
 }
@@ -261,14 +261,14 @@ fn find_mouse_position(
 ) -> Vec4 {
     // get the size of the window that the event is for
     let wnd = wnds.get(ev.id).unwrap();
-    let size = Vec2::new(wnd.width as f32, wnd.height as f32);
+    let size = Vec2::new(wnd.width() as f32, wnd.height() as f32);
 
     // the default orthographic projection is in pixels from the center;
     // just undo the translation
     let p = ev.position - size / 2.0;
 
     // apply the camera transform
-    *camera_transform.value() * p.extend(0.0).extend(1.0)
+    camera_transform.compute_matrix() * p.extend(0.0).extend(1.0)
 }
 
 fn gamepad_connection_system(
@@ -285,6 +285,7 @@ fn gamepad_connection_system(
                 gamepad_manager.gamepads.remove(gamepad);
                 //eprintln!("Disconnected {:?}", gamepad);
             }
+            _ => (),
         }
     }
 }
@@ -294,13 +295,13 @@ fn paddle_control_by_gamepad_system(
     axes: Res<Axis<GamepadAxis>>,
     mut query: Query<(&Paddle, &mut Transform)>,
 ) {
-    for gamepad in gamepad_manager.gamepads.iter() {
+    for gamepad in gamepad_manager.gamepads.iter().cloned() {
         let maybe_x = axes
-            .get(&GamepadAxis(*gamepad, GamepadAxisType::LeftStickX))
+            .get(GamepadAxis(gamepad, GamepadAxisType::LeftStickX))
             //.filter(|value| (value - 1.0f32).abs() > 0.01f32 && (value + 1.0f32).abs() > 0.01f32)
             ;
         let maybe_y = axes
-            .get(&GamepadAxis(*gamepad, GamepadAxisType::LeftStickY))
+            .get(GamepadAxis(gamepad, GamepadAxisType::LeftStickY))
             //.filter(|value| (value - 1.0f32).abs() > 0.01f32 && (value + 1.0f32).abs() > 0.01f32)
             ;
         if let Some((x, y)) = maybe_x.zip(maybe_y) {
@@ -308,9 +309,9 @@ fn paddle_control_by_gamepad_system(
             if x.abs() > 0.03f32 && y.abs() > 0.03f32 {
                 let angle = y.atan2(x);
                 let rot = Quat::from_rotation_z(angle);
-                for (_paddle, mut transform) in &mut query.iter() {
+                for (_paddle, mut transform) in query.iter_mut() {
                     // eprintln!("rot via gamepad:  {:?}", rot);
-                    transform.set_rotation(rot);
+                    transform.rotation = rot;
                 }
             }
         }
@@ -321,8 +322,8 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
     // clamp the timestep to stop the ball from escaping when the game starts
     let delta_seconds = f32::min(0.2, time.delta_seconds);
 
-    for (ball, mut transform) in &mut ball_query.iter() {
-        transform.translate(ball.velocity * delta_seconds);
+    for (ball, mut transform) in ball_query.iter_mut() {
+        transform.translation += ball.velocity * delta_seconds;
     }
 }
 const RADIUS_EXTERN: f32 = 285.0;
@@ -332,48 +333,59 @@ const RADIUS_INTERN: f32 = 108.0;
 const RADIUS_PADDLE_INTERN: f32 = 40.0;
 const HEIGHT_PADDLE_INTERN: f32 = 4.0;
 
+fn is_ball_paddle_collision(
+    ball_transform: &Transform,
+    paddle_transform: &Transform,
+    paddle_height: f32,
+    paddle_dist_origin: f32,
+    paddle_radius_collision: f32,
+) -> bool {
+    let o_dist = ball_transform.translation.length();
+    let between_dist = (paddle_transform
+        .compute_matrix()
+        .transform_vector3(Vec3::new(paddle_dist_origin, 0.0, 0.0))
+        - ball_transform.translation)
+        .length();
+    (o_dist - paddle_dist_origin).abs() <= paddle_height && between_dist <= paddle_radius_collision
+}
+
 fn ball_collision_system(
     mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
-    mut paddle_query: Query<(&Paddle, &Transform)>,
+    paddle_query: Query<(&Paddle, &Transform)>,
 ) {
-    for (mut ball, mut transform) in &mut ball_query.iter() {
-        let o_dist = transform.translation().length();
+    for (mut ball, mut transform) in ball_query.iter_mut() {
+        let o_dist = transform.translation.length();
 
         if o_dist >= RADIUS_EXTERN || o_dist <= RADIUS_INTERN {
-            for (_, paddle_transform) in &mut paddle_query.iter() {
-                let paddle_extern_dist = (paddle_transform.value().transform_vector3(Vec3::new(
+            for (_, paddle_transform) in paddle_query.iter() {
+                let collide_extern = is_ball_paddle_collision(
+                    &transform,
+                    paddle_transform,
+                    HEIGHT_PADDLE_EXTERN,
                     RADIUS_EXTERN,
-                    0.0,
-                    0.0,
-                )) - transform.translation())
-                .length();
-                let paddle_intern_dist = (paddle_transform.value().transform_vector3(Vec3::new(
+                    RADIUS_PADDLE_EXTERN,
+                );
+                let collide_intern = is_ball_paddle_collision(
+                    &transform,
+                    paddle_transform,
+                    HEIGHT_PADDLE_INTERN,
                     RADIUS_INTERN,
-                    0.0,
-                    0.0,
-                )) - transform.translation())
-                .length();
-                let collide_extern = (o_dist - RADIUS_EXTERN).abs() <= HEIGHT_PADDLE_EXTERN
-                    && paddle_extern_dist <= RADIUS_PADDLE_EXTERN;
-                let collide_intern = (o_dist - RADIUS_INTERN).abs() <= HEIGHT_PADDLE_INTERN
-                    && paddle_intern_dist <= RADIUS_PADDLE_INTERN;
+                    RADIUS_PADDLE_INTERN,
+                );
                 if collide_extern || collide_intern {
-                    // FIXME a workaround relocate the ball else strange behaior
-                    let n = transform.translation().normalize();
+                    // FIXME a workaround relocate the ball else strange behavior
+                    let n = transform.translation.normalize();
                     let dist = if collide_extern {
                         RADIUS_EXTERN - 2.0
                     } else {
                         RADIUS_INTERN + 2.0
                     };
-                    transform.set_translation(n * dist);
+                    transform.translation = n * dist;
                     // reflect on axix origin / current position
-                    let o_angle = transform
-                        .translation()
-                        .y()
-                        .atan2(transform.translation().x());
-                    let dest = compute_reflection(o_angle, transform.translation() - ball.velocity);
-                    ball.velocity = dest - transform.translation();
+                    let o_angle = transform.translation.y().atan2(transform.translation.x());
+                    let dest = compute_reflection(o_angle, transform.translation - ball.velocity);
+                    ball.velocity = dest - transform.translation;
                     scoreboard.score += 1;
                     // ball.velocity = compute_reflection(o_angle, ball.velocity);
                     // eprintln!(
@@ -400,10 +412,10 @@ fn scoreboard_system(
     mut query_scoretext: Query<(&mut Text, &ScoreText)>,
     mut query_scorebesttext: Query<(&mut Text, &ScoreBestText)>,
 ) {
-    for (mut text, _) in &mut query_scoretext.iter() {
+    for (mut text, _) in query_scoretext.iter_mut() {
         text.value = format!("{}", scoreboard.score);
     }
-    for (mut text, _) in &mut query_scorebesttext.iter() {
+    for (mut text, _) in query_scorebesttext.iter_mut() {
         text.value = format!("Best: {}", scoreboard.best);
     }
 }
