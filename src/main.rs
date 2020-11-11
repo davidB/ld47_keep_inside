@@ -167,9 +167,11 @@ fn setup(
 ) {
     let camera = Camera2dComponents::default();
     let camera_e = commands.spawn(camera).current_entity().unwrap();
+    let paddle_asset = asset_server.load("paddle.png");
+    let paddle_material = materials.add(paddle_asset.into());
     commands
         .spawn(SpriteComponents {
-            material: materials.add(asset_server.load("paddle.png").into()),
+            material: paddle_material.clone(),
             ..Default::default()
         })
         .with(Paddle {
@@ -178,7 +180,7 @@ fn setup(
             half_width: 90.0,
         })
         .spawn(SpriteComponents {
-            material: materials.add(asset_server.load("paddle.png").into()),
+            material: paddle_material,
             ..Default::default()
         })
         .with(Paddle {
@@ -208,6 +210,8 @@ fn start_system(
     mut materials: ResMut<Assets<ColorMaterial>>,
     query_balls: Query<(Entity, &Ball)>,
 ) {
+    let ball_asset = asset_server.load("ball.png");
+    let ball_material = materials.add(ball_asset.into());
     for ev in state.game_state_event_reader.iter(&game_state_events) {
         match ev {
             GameStateEvent::Start => {
@@ -220,7 +224,7 @@ fn start_system(
                 // ball
                 commands
                     .spawn(SpriteComponents {
-                        material: materials.add(asset_server.load("ball.png").into()),
+                        material: ball_material.clone(),
                         transform: Transform::from_translation(Vec3::new(
                             10.0,
                             -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
