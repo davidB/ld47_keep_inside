@@ -2,7 +2,11 @@
 
 // use self::assets::AssetHandles;
 use bevy::{
-    input::mouse::MouseButtonInput, prelude::*, render::camera::Camera, window::CursorMoved,
+    diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin},
+    input::mouse::MouseButtonInput,
+    prelude::*,
+    render::camera::Camera,
+    window::CursorMoved,
 };
 //use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
@@ -11,6 +15,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     App::build()
         .add_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
+        // Adds frame time diagnostics
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        // Adds a system that prints diagnostics to the console
+        .add_plugin(PrintDiagnosticsPlugin::default())
         .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
         .add_resource(Scoreboard { score: 0, best: 0 })
@@ -43,7 +51,15 @@ struct GamepadState {
     gamepads: HashSet<Gamepad>,
 }
 
-struct Paddle {}
+const RADIUS_EXTERN: f32 = 285.0;
+const RADIUS_INTERN: f32 = 108.0;
+
+struct Paddle {
+    radius_origin: f32,
+    half_height: f32,
+    half_width: f32,
+}
+
 struct Ball {
     velocity: Vec3,
 }
@@ -156,7 +172,20 @@ fn setup(
             material: materials.add(asset_server.load("paddle.png").into()),
             ..Default::default()
         })
-        .with(Paddle {});
+        .with(Paddle {
+            radius_origin: RADIUS_EXTERN,
+            half_height: 5.0,
+            half_width: 90.0,
+        })
+        .spawn(SpriteComponents {
+            material: materials.add(asset_server.load("paddle.png").into()),
+            ..Default::default()
+        })
+        .with(Paddle {
+            radius_origin: RADIUS_INTERN,
+            half_height: 2.0,
+            half_width: 20.0,
+        });
     commands.insert_resource(State {
         mouse_button_event_reader: Default::default(),
         cursor_moved_event_reader: Default::default(),
@@ -320,82 +349,78 @@ fn paddle_control_by_gamepad_system(
 
 fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Transform)>) {
     // clamp the timestep to stop the ball from escaping when the game starts
-    let delta_seconds = f32::min(0.2, time.delta_seconds);
+    let delta_seconds = f32::min(1.0, time.delta_seconds);
 
     for (ball, mut transform) in ball_query.iter_mut() {
         transform.translation += ball.velocity * delta_seconds;
     }
 }
-const RADIUS_EXTERN: f32 = 285.0;
-const RADIUS_PADDLE_EXTERN: f32 = 100.0;
-const HEIGHT_PADDLE_EXTERN: f32 = 10.0;
-const RADIUS_INTERN: f32 = 108.0;
-const RADIUS_PADDLE_INTERN: f32 = 40.0;
-const HEIGHT_PADDLE_INTERN: f32 = 4.0;
 
-fn is_ball_paddle_collision(
-    ball_transform: &Transform,
+fn find_ball_paddle_collision_point(
+    ball_translation_current: &Vec3,
+    ball_translation_previous: &Vec3,
     paddle_transform: &Transform,
-    paddle_height: f32,
-    paddle_dist_origin: f32,
-    paddle_radius_collision: f32,
-) -> bool {
-    let o_dist = ball_transform.translation.length();
-    let between_dist = (paddle_transform
-        .compute_matrix()
-        .transform_vector3(Vec3::new(paddle_dist_origin, 0.0, 0.0))
-        - ball_transform.translation)
-        .length();
-    (o_dist - paddle_dist_origin).abs() <= paddle_height && between_dist <= paddle_radius_collision
+    paddle: &Paddle,
+) -> Option<Vec3> {
+    let current_o_dist = ball_translation_current.length();
+    let previous_o_dist = ball_translation_previous.length();
+    let paddle_o_dist = paddle.radius_origin;
+    let maybe_collision_o_dist =
+        if previous_o_dist < paddle_o_dist && paddle_o_dist < current_o_dist {
+            Some(paddle_o_dist - paddle.half_height)
+        } else if previous_o_dist > paddle_o_dist && paddle_o_dist > current_o_dist {
+            Some(paddle_o_dist + paddle.half_height)
+        } else {
+            None
+        };
+    maybe_collision_o_dist.and_then(|collision_o_dist| {
+        let ratio = (current_o_dist - collision_o_dist) / (current_o_dist - previous_o_dist);
+        let collision_point = *ball_translation_previous
+            + ((*ball_translation_current - *ball_translation_previous).normalize() * ratio);
+        let paddle_translation = paddle_transform
+            .compute_matrix()
+            .transform_vector3(Vec3::new(paddle.radius_origin, 0.0, 0.0));
+        if (collision_point - paddle_translation).length_squared()
+            <= paddle.half_width * paddle.half_width
+        {
+            Some(collision_point)
+        } else {
+            None
+        }
+    })
 }
 
 fn ball_collision_system(
+    time: Res<Time>,
     mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
     paddle_query: Query<(&Paddle, &Transform)>,
 ) {
+    let delta_seconds = f32::min(1.0, time.delta_seconds);
     for (mut ball, mut transform) in ball_query.iter_mut() {
-        let o_dist = transform.translation.length();
-
-        if o_dist >= RADIUS_EXTERN || o_dist <= RADIUS_INTERN {
-            for (_, paddle_transform) in paddle_query.iter() {
-                let collide_extern = is_ball_paddle_collision(
-                    &transform,
-                    paddle_transform,
-                    HEIGHT_PADDLE_EXTERN,
-                    RADIUS_EXTERN,
-                    RADIUS_PADDLE_EXTERN,
-                );
-                let collide_intern = is_ball_paddle_collision(
-                    &transform,
-                    paddle_transform,
-                    HEIGHT_PADDLE_INTERN,
-                    RADIUS_INTERN,
-                    RADIUS_PADDLE_INTERN,
-                );
-                if collide_extern || collide_intern {
-                    // FIXME a workaround relocate the ball else strange behavior
-                    let n = transform.translation.normalize();
-                    let dist = if collide_extern {
-                        RADIUS_EXTERN - 2.0
-                    } else {
-                        RADIUS_INTERN + 2.0
-                    };
-                    transform.translation = n * dist;
-                    // reflect on axix origin / current position
-                    let o_angle = transform.translation.y().atan2(transform.translation.x());
-                    let dest = compute_reflection(o_angle, transform.translation - ball.velocity);
-                    ball.velocity = dest - transform.translation;
-                    scoreboard.score += 1;
-                    // ball.velocity = compute_reflection(o_angle, ball.velocity);
-                    // eprintln!(
-                    //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
-                    //     o_dist,
-                    //     ball.o_dist,
-                    //     ball.velocity,
-                    //     ball.velocity.length()
-                    // );
-                }
+        let ball_translation_previous = transform.translation - ball.velocity * delta_seconds;
+        for (paddle, paddle_transform) in paddle_query.iter() {
+            let maybe_collision_point = find_ball_paddle_collision_point(
+                &transform.translation,
+                &ball_translation_previous,
+                paddle_transform,
+                paddle,
+            );
+            if let Some(collision_point) = maybe_collision_point {
+                transform.translation = collision_point;
+                // reflect on axix origin / current position
+                let o_angle = collision_point.y().atan2(collision_point.x());
+                let dest = compute_reflection(o_angle, collision_point - ball.velocity);
+                ball.velocity = dest - collision_point;
+                scoreboard.score += 1;
+                // ball.velocity = compute_reflection(o_angle, ball.velocity);
+                // eprintln!(
+                //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
+                //     o_dist,
+                //     ball.o_dist,
+                //     ball.velocity,
+                //     ball.velocity.length()
+                // );
             }
         }
     }
