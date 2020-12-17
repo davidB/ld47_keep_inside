@@ -9,9 +9,11 @@ use bevy::{
     window::CursorMoved,
 };
 use bevy_prototype_lyon::prelude::*;
-//use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
 use std::f32::consts::{FRAC_PI_6, PI};
+//use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
+#[cfg(target_arch = "wasm32")]
+use bevy_webgl2;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::build();
@@ -32,8 +34,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(start_system.system())
         .add_system(start_control_system.system())
         .add_system(scoreboard_system.system());
-    // #[cfg(target_arch = "wasm32")]
-    // app.add_plugin(bevy_webgl2::WebGL2Plugin);
+    #[cfg(target_arch = "wasm32")]
+    app.add_plugin(bevy_webgl2::WebGL2Plugin);
 
     // // Adds frame time diagnostics
     // app.add_plugin(FrameTimeDiagnosticsPlugin::default())
@@ -103,7 +105,7 @@ fn setup_ui(
             },
             material: materials.add(Color::NONE.into()),
             draw: Draw {
-                is_transparent: true,
+                // is_transparent: true,
                 ..Default::default()
             },
             ..Default::default()
