@@ -9,19 +9,39 @@ repository = "https://github.com/davidB/ld47_keep_inside"
 homepage = "https://github.com/davidB/ld47_keep_inside"
 edition = "2018"
 
+[features]
+default = [
+    # "bevy/bevy_audio",
+    # "bevy/bevy_dynamic_plugin",
+    # "bevy/bevy_gilrs",
+    "bevy/bevy_gltf",
+    "bevy/bevy_wgpu",
+    "bevy/bevy_winit",
+    # "bevy/hdr",
+    # "bevy/mp3",
+    "bevy/png",
+    "bevy/render",
+    "winit/web-sys",
+    "winit/x11",
+]
+
 [dependencies]
-bevy = "0.3.0"
-bevy_input = "0.3.0"
+bevy = {git = "https://github.com/bevyengine/bevy", default-features=false}
+winit = {version = "0.23", default-features = false}
+bevy_prototype_lyon = { git = "https://github.com/vleue/bevy_prototype_lyon" }
 
-# # Compile all the *dependencies* in optimized release mode even if `--release` is not passed in
-# [profile.dev]
-# opt-level = 3
-# debug = false
+[patch.'https://github.com/bevyengine/bevy']
+bevy = {git = "https://github.com/bevyengine/bevy//", rev="704a11677881e762415b15e384c1b7a05fee7c1e",default-features=false}
 
-# # But compile the project itself in debug mode if `--release` is not passed in
-# [profile.dev.package.ld47_keep_inside]
-# opt-level = 0
-# debug = true
+# Compile all the *dependencies* in optimized release mode even if `--release` is not passed in
+[profile.dev]
+opt-level = 3
+debug = false
+
+# But compile the project itself in debug mode if `--release` is not passed in
+[profile.dev.package.ld47_keep_inside]
+opt-level = 1
+debug = true
 
 # see https://github.com/johnthagen/min-sized-rust
 [profile.release]
@@ -34,6 +54,3 @@ opt-level = 'z'
 # Tells the compiler to use only one code generator instead of running several in parallel. Disabling parallel code generation makes the compilation slower but makes all optimizations possible.
 codegen-units = 1
 
-# [patch.crates-io]
-# # fork / PR to be able to read asset from include_bytes!
-# bevy = { git = "https://github.com/mockersf/bevy", branch = "ld" }

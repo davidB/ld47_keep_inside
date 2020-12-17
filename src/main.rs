@@ -8,17 +8,15 @@ use bevy::{
     render::camera::Camera,
     window::CursorMoved,
 };
+use bevy_prototype_lyon::prelude::*;
 //use bevy_input::gamepad::{GamepadEvent, GamepadEventType};
 use std::collections::HashSet;
+use std::f32::consts::{FRAC_PI_6, PI};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    App::build()
-        .add_resource(Msaa { samples: 4 })
+    let mut app = App::build();
+    app.add_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
-        // Adds frame time diagnostics
-        .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        // Adds a system that prints diagnostics to the console
-        .add_plugin(PrintDiagnosticsPlugin::default())
         .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
         .add_resource(Scoreboard { score: 0, best: 0 })
@@ -30,10 +28,19 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(paddle_control_by_gamepad_system.system())
         .add_system(ball_movement_system.system())
         .add_system(ball_collision_system.system())
+        .add_system(update_paddle_transform.system())
         .add_system(start_system.system())
         .add_system(start_control_system.system())
-        .add_system(scoreboard_system.system())
-        .run();
+        .add_system(scoreboard_system.system());
+    // #[cfg(target_arch = "wasm32")]
+    // app.add_plugin(bevy_webgl2::WebGL2Plugin);
+
+    // // Adds frame time diagnostics
+    // app.add_plugin(FrameTimeDiagnosticsPlugin::default())
+    // // Adds a system that prints diagnostics to the console
+    // .add_plugin(PrintDiagnosticsPlugin::default());
+
+    app.run();
     Ok(())
 }
 
@@ -56,12 +63,14 @@ const RADIUS_INTERN: f32 = 108.0;
 
 struct Paddle {
     radius_origin: f32,
+    angle_origin: f32,
+    half_surface_angle: f32,
     half_height: f32,
-    half_width: f32,
 }
 
 struct Ball {
     velocity: Vec3,
+    radius: f32,
 }
 
 struct Scoreboard {
@@ -75,16 +84,16 @@ enum GameStateEvent {
 }
 
 fn setup_ui(
-    mut commands: Commands,
+    commands: &mut Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
 ) {
     let font_score_handle = asset_server.load("Eduardo-Barrasa.ttf");
     let font_text_handle = asset_server.load("FiraMono-Medium.ttf");
     commands
-        .spawn(UiCameraComponents::default())
+        .spawn(CameraUiBundle::default())
         // scoreboard
-        .spawn(NodeComponents {
+        .spawn(NodeBundle {
             style: Style {
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                 align_items: AlignItems::Center,
@@ -101,7 +110,7 @@ fn setup_ui(
         })
         .with_children(|parent| {
             parent
-                .spawn(TextComponents {
+                .spawn(TextBundle {
                     style: Style {
                         ..Default::default()
                     },
@@ -111,19 +120,21 @@ fn setup_ui(
                         style: TextStyle {
                             font_size: 100.0,
                             color: Color::rgb_u8(0x00, 0xAA, 0xAA),
+                            alignment: TextAlignment::default(),
                         },
                     },
                     ..Default::default()
                 })
                 .with(ScoreText {});
         })
-        .spawn(TextComponents {
+        .spawn(TextBundle {
             text: Text {
                 font: font_text_handle.clone(),
                 value: "Click or Button (A) on Gamepad\nto spawn a ball and to start".to_string(),
                 style: TextStyle {
                     color: Color::rgb(0.2, 0.2, 0.8),
                     font_size: 20.0,
+                    alignment: TextAlignment::default(),
                 },
             },
             style: Style {
@@ -137,13 +148,14 @@ fn setup_ui(
             },
             ..Default::default()
         })
-        .spawn(TextComponents {
+        .spawn(TextBundle {
             text: Text {
                 font: font_text_handle,
                 value: "Best: 0".to_string(),
                 style: TextStyle {
                     color: Color::rgb(0.2, 0.2, 0.8),
                     font_size: 20.0,
+                    alignment: TextAlignment::default(),
                 },
             },
             style: Style {
@@ -160,58 +172,103 @@ fn setup_ui(
         .with(ScoreBestText {});
 }
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut materials: ResMut<Assets<ColorMaterial>>,
+fn add_paddle(
+    commands: &mut Commands,
+    //asset_server: Res<AssetServer>,
+    meshes: &mut ResMut<Assets<Mesh>>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    radius: f32,
+    height: f32,
+    surface_angle: f32,
 ) {
-    let camera = Camera2dComponents::default();
-    let camera_e = commands.spawn(camera).current_entity().unwrap();
-    let paddle_asset = asset_server.load("paddle.png");
-    let paddle_material = materials.add(paddle_asset.into());
+    let mut builder = PathBuilder::new();
+    builder.move_to(point(radius, 0.01));
+    builder.arc(
+        point(0.0, 0.0),
+        radius,
+        radius,
+        surface_angle, // use negative angles for a clockwise arc.
+        0.0,
+    );
+    // Calling `PathBuilder::build` will return a `Path` ready to be used to create
+    // Bevy entities.
+    let path = builder.build();
+    let paddle_material = materials.add(Color::rgb(0.1, 0.4, 0.5).into());
+    let circle_material = materials.add(Color::rgba(0.5, 0.4, 0.1, 0.8).into());
     commands
-        .spawn(SpriteComponents {
-            material: paddle_material.clone(),
-            ..Default::default()
+        .spawn(path.stroke(
+            paddle_material,
+            meshes,
+            Vec3::new(0.0, 0.0, 0.0),
+            &StrokeOptions::default().with_line_width(height), //.with_line_cap(LineCap::Round)
+                                                               //.with_line_join(LineJoin::Round)
+        ))
+        .with_children(|parent| {
+            parent.spawn(primitive(
+                circle_material,
+                meshes,
+                ShapeType::Circle(radius),
+                TessellationMode::Stroke(&StrokeOptions::default().with_line_width(1.0)),
+                Vec3::zero().into(),
+            ));
         })
         .with(Paddle {
             radius_origin: RADIUS_EXTERN,
-            half_height: 5.0,
-            half_width: 90.0,
-        })
-        .spawn(SpriteComponents {
-            material: paddle_material,
-            ..Default::default()
-        })
-        .with(Paddle {
-            radius_origin: RADIUS_INTERN,
-            half_height: 2.0,
-            half_width: 20.0,
+            half_surface_angle: surface_angle / 2.0,
+            half_height: height / 2.0,
+            angle_origin: 0.0,
         });
+}
+
+fn setup(
+    commands: &mut Commands,
+    //asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+) {
+    let camera = Camera2dBundle::default();
+    let camera_e = commands.spawn(camera).current_entity().unwrap();
+    add_paddle(
+        commands,
+        &mut meshes,
+        &mut materials,
+        RADIUS_EXTERN,
+        12.0,
+        FRAC_PI_6,
+    );
+    add_paddle(
+        commands,
+        &mut meshes,
+        &mut materials,
+        RADIUS_INTERN,
+        4.0,
+        FRAC_PI_6,
+    );
     commands.insert_resource(State {
         mouse_button_event_reader: Default::default(),
         cursor_moved_event_reader: Default::default(),
         camera_e,
         game_state_event_reader: Default::default(),
     });
-    commands.insert_resource(ClearColor(Color::rgb(
+    commands.insert_resource(ClearColor(Color::rgba(
         232.0 / 255.0,
         233.0 / 255.0,
         235.0 / 255.0,
+        1.0,
     )));
 }
 
 fn start_system(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut scoreboard: ResMut<Scoreboard>,
     mut state: ResMut<State>,
     game_state_events: Res<Events<GameStateEvent>>,
-    asset_server: Res<AssetServer>,
+    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     query_balls: Query<(Entity, &Ball)>,
 ) {
-    let ball_asset = asset_server.load("ball.png");
-    let ball_material = materials.add(ball_asset.into());
+    let material = materials.add(Color::rgb(0.8, 0.0, 0.0).into());
+    let radius = 5.0;
     for ev in state.game_state_event_reader.iter(&game_state_events) {
         match ev {
             GameStateEvent::Start => {
@@ -223,17 +280,25 @@ fn start_system(
                 }
                 // ball
                 commands
-                    .spawn(SpriteComponents {
-                        material: ball_material.clone(),
-                        transform: Transform::from_translation(Vec3::new(
-                            10.0,
-                            -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
-                            1.0,
-                        )),
-                        ..Default::default()
-                    })
+                    // .spawn(SpriteBundle {
+                    //     material: ball_material.clone(),
+                    //     transform: Transform::from_translation(Vec3::new(
+                    //         10.0,
+                    //         -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0,
+                    //         1.0,
+                    //     )),
+                    //     ..Default::default()
+                    // })
+                    .spawn(primitive(
+                        material.clone(),
+                        &mut meshes,
+                        ShapeType::Circle(radius),
+                        TessellationMode::Fill(&FillOptions::default()),
+                        Vec3::new(10.0, -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0, 1.0).into(),
+                    ))
                     .with(Ball {
                         velocity: 410.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
+                        radius,
                     });
             }
         }
@@ -269,18 +334,16 @@ fn paddle_control_by_mouse_system(
     mut state: ResMut<State>,
     cursor_moved_events: Res<Events<CursorMoved>>,
     wnds: Res<Windows>,
-    mut query: Query<(&Paddle, &mut Transform)>,
-    // query to get camera components
+    mut query: Query<&mut Paddle>,
+    // query to get camera Bundle
     q_camera: Query<(&Camera, &Transform)>,
 ) {
     if let Ok((_, camera_transform)) = q_camera.get(state.camera_e) {
         for ev in state.cursor_moved_event_reader.iter(&cursor_moved_events) {
             let pos_wld = find_mouse_position(ev, &wnds, &camera_transform);
-            let mouse_angle = pos_wld.y().atan2(pos_wld.x());
-            let rot = Quat::from_rotation_z(mouse_angle);
-            for (_paddle, mut transform) in query.iter_mut() {
-                //eprintln!("rot via mouse:  {:?} {:?}", rot, pos_wld);
-                transform.rotation = rot;
+            for mut paddle in query.iter_mut() {
+                let mouse_angle = pos_wld.y.atan2(pos_wld.x);
+                paddle.angle_origin = positive_angle(mouse_angle);
             }
         }
     }
@@ -326,7 +389,7 @@ fn gamepad_connection_system(
 fn paddle_control_by_gamepad_system(
     gamepad_manager: Res<GamepadState>,
     axes: Res<Axis<GamepadAxis>>,
-    mut query: Query<(&Paddle, &mut Transform)>,
+    mut query: Query<&mut Paddle>,
 ) {
     for gamepad in gamepad_manager.gamepads.iter().cloned() {
         let maybe_x = axes
@@ -341,10 +404,9 @@ fn paddle_control_by_gamepad_system(
             // ignore if x and y are in the dead zone
             if x.abs() > 0.03f32 && y.abs() > 0.03f32 {
                 let angle = y.atan2(x);
-                let rot = Quat::from_rotation_z(angle);
-                for (_paddle, mut transform) in query.iter_mut() {
+                for mut paddle in query.iter_mut() {
                     // eprintln!("rot via gamepad:  {:?}", rot);
-                    transform.rotation = rot;
+                    paddle.angle_origin = angle;
                 }
             }
         }
@@ -353,7 +415,7 @@ fn paddle_control_by_gamepad_system(
 
 fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Transform)>) {
     // clamp the timestep to stop the ball from escaping when the game starts
-    let delta_seconds = f32::min(1.0, time.delta_seconds);
+    let delta_seconds = f32::min(1.0, time.delta_seconds());
 
     for (ball, mut transform) in ball_query.iter_mut() {
         transform.translation += ball.velocity * delta_seconds;
@@ -363,7 +425,7 @@ fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Tran
 fn find_ball_paddle_collision_point(
     ball_translation_current: &Vec3,
     ball_translation_previous: &Vec3,
-    paddle_transform: &Transform,
+    ball: &Ball,
     paddle: &Paddle,
 ) -> Option<Vec3> {
     let current_o_dist = ball_translation_current.length();
@@ -371,9 +433,9 @@ fn find_ball_paddle_collision_point(
     let paddle_o_dist = paddle.radius_origin;
     let maybe_collision_o_dist =
         if previous_o_dist < paddle_o_dist && paddle_o_dist < current_o_dist {
-            Some(paddle_o_dist - paddle.half_height)
+            Some(paddle_o_dist - paddle.half_height - ball.radius)
         } else if previous_o_dist > paddle_o_dist && paddle_o_dist > current_o_dist {
-            Some(paddle_o_dist + paddle.half_height)
+            Some(paddle_o_dist + paddle.half_height + ball.radius)
         } else {
             None
         };
@@ -381,39 +443,41 @@ fn find_ball_paddle_collision_point(
         let ratio = (current_o_dist - collision_o_dist) / (current_o_dist - previous_o_dist);
         let collision_point = *ball_translation_previous
             + ((*ball_translation_current - *ball_translation_previous).normalize() * ratio);
-        let paddle_translation = paddle_transform
-            .compute_matrix()
-            .transform_vector3(Vec3::new(paddle.radius_origin, 0.0, 0.0));
-        if (collision_point - paddle_translation).length_squared()
-            <= paddle.half_width * paddle.half_width
-        {
+        let collision_rot = positive_angle(collision_point.y.atan2(collision_point.x));
+        let paddle_rot = paddle.angle_origin;
+        dbg!(paddle_rot, collision_rot, collision_rot - paddle_rot);
+        if (collision_rot - paddle_rot).abs() <= paddle.half_surface_angle {
             Some(collision_point)
         } else {
             None
         }
     })
 }
+fn positive_angle(angle: f32) -> f32 {
+    let a = (angle + (2.0 * PI)) % (2.0 * PI);
+    a
+}
 
 fn ball_collision_system(
     time: Res<Time>,
     mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
-    paddle_query: Query<(&Paddle, &Transform)>,
+    paddle_query: Query<&Paddle>,
 ) {
-    let delta_seconds = f32::min(1.0, time.delta_seconds);
+    let delta_seconds = f32::min(1.0, time.delta_seconds());
     for (mut ball, mut transform) in ball_query.iter_mut() {
         let ball_translation_previous = transform.translation - ball.velocity * delta_seconds;
-        for (paddle, paddle_transform) in paddle_query.iter() {
+        for paddle in paddle_query.iter() {
             let maybe_collision_point = find_ball_paddle_collision_point(
                 &transform.translation,
                 &ball_translation_previous,
-                paddle_transform,
+                &ball,
                 paddle,
             );
             if let Some(collision_point) = maybe_collision_point {
                 transform.translation = collision_point;
                 // reflect on axix origin / current position
-                let o_angle = collision_point.y().atan2(collision_point.x());
+                let o_angle = collision_point.y.atan2(collision_point.x);
                 let dest = compute_reflection(o_angle, collision_point - ball.velocity);
                 ball.velocity = dest - collision_point;
                 scoreboard.score += 1;
@@ -446,5 +510,26 @@ fn scoreboard_system(
     }
     for (mut text, _) in query_scorebesttext.iter_mut() {
         text.value = format!("Best: {}", scoreboard.best);
+    }
+}
+
+fn update_paddle_transform(mut paddle_query: Query<(&Paddle, &mut Transform)>) {
+    for (paddle, mut paddle_transform) in paddle_query.iter_mut() {
+        paddle_transform.rotation =
+            Quat::from_rotation_z(paddle.angle_origin - paddle.half_surface_angle);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_positive_angle() {
+        assert_eq!(positive_angle(0.0), 0.0);
+        assert_eq!(positive_angle(2.0 * PI), 0.0);
+        assert_eq!(positive_angle(PI), PI);
+        assert_eq!(positive_angle(-PI), PI);
+        assert_eq!(positive_angle(-0.5 * PI), 1.5 * PI);
     }
 }
