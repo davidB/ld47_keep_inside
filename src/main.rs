@@ -66,10 +66,26 @@ const RADIUS_INTERN: f32 = 108.0;
 struct Paddle {
     radius_origin: f32,
     angle_origin: f32,
+    angle_speed: f32,
     half_surface_angle: f32,
     half_height: f32,
 }
 
+impl Paddle {
+    fn set_angle(&mut self, angle: f32) {
+        let previous_angle = self.angle_origin;
+        let new_angle = positive_angle(angle);
+        let angle_delta = new_angle - previous_angle;
+        self.angle_origin = new_angle;
+        self.angle_speed = if angle_delta > PI {
+            new_angle - (previous_angle + 2.0 * PI)
+        } else if angle_delta < -PI {
+            new_angle + 2.0 * PI - previous_angle
+        } else {
+            angle_delta
+        };
+    }
+}
 struct Ball {
     velocity: Vec3,
     radius: f32,
@@ -219,6 +235,7 @@ fn add_paddle(
             half_surface_angle: surface_angle / 2.0,
             half_height: height / 2.0,
             angle_origin: 0.0,
+            angle_speed: 0.0,
         });
 }
 
@@ -345,7 +362,7 @@ fn paddle_control_by_mouse_system(
             let pos_wld = find_mouse_position(ev, &wnds, &camera_transform);
             for mut paddle in query.iter_mut() {
                 let mouse_angle = pos_wld.y.atan2(pos_wld.x);
-                paddle.angle_origin = positive_angle(mouse_angle);
+                paddle.set_angle(mouse_angle);
             }
         }
     }
@@ -408,7 +425,7 @@ fn paddle_control_by_gamepad_system(
                 let angle = y.atan2(x);
                 for mut paddle in query.iter_mut() {
                     // eprintln!("rot via gamepad:  {:?}", rot);
-                    paddle.angle_origin = angle;
+                    paddle.set_angle(angle);
                 }
             }
         }
@@ -447,7 +464,6 @@ fn find_ball_paddle_collision_point(
             + ((*ball_translation_current - *ball_translation_previous).normalize() * ratio);
         let collision_rot = positive_angle(collision_point.y.atan2(collision_point.x));
         let paddle_rot = paddle.angle_origin;
-        dbg!(paddle_rot, collision_rot, collision_rot - paddle_rot);
         if (collision_rot - paddle_rot).abs() <= paddle.half_surface_angle {
             Some(collision_point)
         } else {
@@ -479,9 +495,19 @@ fn ball_collision_system(
             if let Some(collision_point) = maybe_collision_point {
                 transform.translation = collision_point;
                 // reflect on axix origin / current position
-                let o_angle = collision_point.y.atan2(collision_point.x);
-                let dest = compute_reflection(o_angle, collision_point - ball.velocity);
-                ball.velocity = dest - collision_point;
+                //let o_angle = collision_point.y.atan2(collision_point.x);
+                // let dest = compute_reflection(o_angle, collision_point - ball.velocity);
+                let normal_surface =
+                    Vec3::new(collision_point.x, collision_point.y, 0.0).normalize();
+                let speed_impact = 0.3 * paddle.angle_speed / (2.0 * PI);
+                let mirror = normal_surface
+                    + Vec3::new(
+                        -collision_point.y * speed_impact,
+                        collision_point.x * speed_impact,
+                        0.0,
+                    );
+                let velocity = reflect_2d(ball.velocity, mirror.normalize());
+                ball.velocity = velocity;
                 scoreboard.score += 1;
                 // ball.velocity = compute_reflection(o_angle, ball.velocity);
                 // eprintln!(
@@ -496,10 +522,9 @@ fn ball_collision_system(
     }
 }
 
-fn compute_reflection(x_axis_angle: f32, position: Vec3) -> Vec3 {
-    let mat_rotate_space = Mat3::from_axis_angle(Vec3::new(0.0, 0.0, 1.0), x_axis_angle);
-    let mat_mirror_x = Mat3::from_cols_array(&[1.0, 0.0, 0.0, 0.0, -1.0, 0.0, 0.0, 0.0, 1.0]);
-    mat_rotate_space * mat_mirror_x * mat_rotate_space.inverse() * position
+fn reflect_2d(v: Vec3, n: Vec3) -> Vec3 {
+    let d = v.x * n.x + v.y * n.y; //dot(v, n)
+    Vec3::new(v.x - 2.0 * d * n.x, v.y - 2.0 * d * n.y, 0.0)
 }
 
 fn scoreboard_system(
