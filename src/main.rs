@@ -2,7 +2,7 @@
 
 // use self::assets::AssetHandles;
 use bevy::{
-    diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin},
+    // diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin},
     input::mouse::MouseButtonInput,
     prelude::*,
     render::camera::Camera,
@@ -88,10 +88,16 @@ impl Paddle {
 }
 struct Ball {
     mvt_dir: Vec3,
-    velocity: f32,
+    velocity_indicator: i32,
     radius: f32,
 }
 
+impl Ball {
+    //TODO try a log or bezier curve
+    fn velocity(&self) -> f32 {
+        410.0 + 10.0 * self.velocity_indicator as f32
+    }
+}
 struct Scoreboard {
     score: usize,
     best: usize,
@@ -317,7 +323,7 @@ fn start_system(
                         Vec3::new(10.0, -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0, 1.0).into(),
                     ))
                     .with(Ball {
-                        velocity: 410.0,
+                        velocity_indicator: 0,
                         mvt_dir: Vec3::new(0.5, -0.5, 0.0).normalize(),
                         radius,
                     });
@@ -483,7 +489,7 @@ fn ball_movement_system(
 
     for (mut ball, mut transform) in ball_query.iter_mut() {
         let ball_translation_previous = transform.translation;
-        transform.translation += (ball.velocity * delta_seconds) * ball.mvt_dir;
+        transform.translation += (ball.velocity() * delta_seconds) * ball.mvt_dir;
         for paddle in paddle_query.iter() {
             let maybe_collision_point = find_ball_paddle_collision_point(
                 &transform.translation,
@@ -503,8 +509,9 @@ fn ball_movement_system(
                     );
                 let mvt_dir = reflect_2d(ball.mvt_dir, mirror.normalize());
                 ball.mvt_dir = mvt_dir;
+                ball.velocity_indicator += 1;
                 transform.translation = collision_point
-                    + ((1.0 - ratio) * (ball.velocity * delta_seconds)) * ball.mvt_dir;
+                    + ((1.0 - ratio) * (ball.velocity() * delta_seconds)) * ball.mvt_dir;
                 scoreboard.score += 1;
             }
         }
