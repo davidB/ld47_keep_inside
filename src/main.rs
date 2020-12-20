@@ -29,7 +29,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(paddle_control_by_mouse_system.system())
         .add_system(paddle_control_by_gamepad_system.system())
         .add_system(ball_movement_system.system())
-        .add_system(ball_collision_system.system())
         .add_system(update_paddle_transform.system())
         .add_system(start_system.system())
         .add_system(start_control_system.system())
@@ -87,7 +86,8 @@ impl Paddle {
     }
 }
 struct Ball {
-    velocity: Vec3,
+    mvt_dir: Vec3,
+    velocity: f32,
     radius: f32,
 }
 
@@ -231,7 +231,7 @@ fn add_paddle(
             ));
         })
         .with(Paddle {
-            radius_origin: RADIUS_EXTERN,
+            radius_origin: radius,
             half_surface_angle: surface_angle / 2.0,
             half_height: height / 2.0,
             angle_origin: 0.0,
@@ -316,7 +316,8 @@ fn start_system(
                         Vec3::new(10.0, -(RADIUS_EXTERN + RADIUS_INTERN) / 2.0, 1.0).into(),
                     ))
                     .with(Ball {
-                        velocity: 410.0 * Vec3::new(0.5, -0.5, 0.0).normalize(),
+                        velocity: 410.0,
+                        mvt_dir: Vec3::new(0.5, -0.5, 0.0).normalize(),
                         radius,
                     });
             }
@@ -432,59 +433,56 @@ fn paddle_control_by_gamepad_system(
     }
 }
 
-fn ball_movement_system(time: Res<Time>, mut ball_query: Query<(&Ball, &mut Transform)>) {
-    // clamp the timestep to stop the ball from escaping when the game starts
-    let delta_seconds = f32::min(1.0, time.delta_seconds());
-
-    for (ball, mut transform) in ball_query.iter_mut() {
-        transform.translation += ball.velocity * delta_seconds;
-    }
-}
-
 fn find_ball_paddle_collision_point(
     ball_translation_current: &Vec3,
     ball_translation_previous: &Vec3,
     ball: &Ball,
     paddle: &Paddle,
-) -> Option<Vec3> {
+) -> Option<(Vec3, f32)> {
     let current_o_dist = ball_translation_current.length();
     let previous_o_dist = ball_translation_previous.length();
-    let paddle_o_dist = paddle.radius_origin;
+    let mvt_dir = (current_o_dist - previous_o_dist).signum();
+    let range = paddle.half_height + ball.radius;
+    let paddle_o_dist = paddle.radius_origin - mvt_dir * range;
     let maybe_collision_o_dist =
-        if previous_o_dist < paddle_o_dist && paddle_o_dist < current_o_dist {
-            Some(paddle_o_dist - paddle.half_height - ball.radius)
-        } else if previous_o_dist > paddle_o_dist && paddle_o_dist > current_o_dist {
-            Some(paddle_o_dist + paddle.half_height + ball.radius)
+        if previous_o_dist < paddle_o_dist && paddle_o_dist <= current_o_dist {
+            Some(paddle_o_dist)
+        } else if previous_o_dist > paddle_o_dist && paddle_o_dist >= current_o_dist {
+            Some(paddle_o_dist)
         } else {
             None
         };
     maybe_collision_o_dist.and_then(|collision_o_dist| {
-        let ratio = (current_o_dist - collision_o_dist) / (current_o_dist - previous_o_dist);
+        let ratio = (collision_o_dist - previous_o_dist) / (current_o_dist - previous_o_dist);
         let collision_point = *ball_translation_previous
             + ((*ball_translation_current - *ball_translation_previous).normalize() * ratio);
         let collision_rot = positive_angle(collision_point.y.atan2(collision_point.x));
         let paddle_rot = paddle.angle_origin;
         if (collision_rot - paddle_rot).abs() <= paddle.half_surface_angle {
-            Some(collision_point)
+            Some((collision_point, ratio))
         } else {
             None
         }
     })
 }
+
 fn positive_angle(angle: f32) -> f32 {
     let a = (angle + (2.0 * PI)) % (2.0 * PI);
     a
 }
 
-fn ball_collision_system(
+fn ball_movement_system(
     time: Res<Time>,
     mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
     paddle_query: Query<&Paddle>,
 ) {
-    let delta_seconds = f32::min(1.0, time.delta_seconds());
+    // clamp the timestep to stop the ball from escaping when the game starts
+    let delta_seconds = f32::max(1.0 / 60.0, f32::min(1.0, time.delta_seconds()));
+
     for (mut ball, mut transform) in ball_query.iter_mut() {
-        let ball_translation_previous = transform.translation - ball.velocity * delta_seconds;
+        let ball_translation_previous = transform.translation;
+        transform.translation += (ball.velocity * delta_seconds) * ball.mvt_dir;
         for paddle in paddle_query.iter() {
             let maybe_collision_point = find_ball_paddle_collision_point(
                 &transform.translation,
@@ -492,31 +490,21 @@ fn ball_collision_system(
                 &ball,
                 paddle,
             );
-            if let Some(collision_point) = maybe_collision_point {
-                transform.translation = collision_point;
-                // reflect on axix origin / current position
-                //let o_angle = collision_point.y.atan2(collision_point.x);
-                // let dest = compute_reflection(o_angle, collision_point - ball.velocity);
+            if let Some((collision_point, ratio)) = maybe_collision_point {
                 let normal_surface =
-                    Vec3::new(collision_point.x, collision_point.y, 0.0).normalize();
-                let speed_impact = 0.3 * paddle.angle_speed / (2.0 * PI);
+                    Vec3::new(-collision_point.x, -collision_point.y, 0.0).normalize();
+                let speed_impact = 1.0 * paddle.angle_speed / (delta_seconds * 2.0 * PI);
                 let mirror = normal_surface
                     + Vec3::new(
-                        -collision_point.y * speed_impact,
-                        collision_point.x * speed_impact,
+                        -normal_surface.y * speed_impact,
+                        normal_surface.x * speed_impact,
                         0.0,
                     );
-                let velocity = reflect_2d(ball.velocity, mirror.normalize());
-                ball.velocity = velocity;
+                let mvt_dir = reflect_2d(ball.mvt_dir, mirror.normalize());
+                ball.mvt_dir = mvt_dir;
+                transform.translation = collision_point
+                    + ((1.0 - ratio) * (ball.velocity * delta_seconds)) * ball.mvt_dir;
                 scoreboard.score += 1;
-                // ball.velocity = compute_reflection(o_angle, ball.velocity);
-                // eprintln!(
-                //     "out of the zone {:?} > {:?} new velocity {:?} {:?}",
-                //     o_dist,
-                //     ball.o_dist,
-                //     ball.velocity,
-                //     ball.velocity.length()
-                // );
             }
         }
     }
