@@ -15,6 +15,7 @@ use std::f32::consts::{FRAC_PI_6, PI};
 #[cfg(target_arch = "wasm32")]
 use bevy_webgl2;
 
+#[bevy_main]
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::build();
     app.add_resource(Msaa { samples: 4 })
