@@ -8,6 +8,7 @@ use bevy::{
     render::camera::Camera,
     window::CursorMoved,
 };
+use bevy_easings::*;
 use bevy_prototype_lyon::prelude::*;
 use std::collections::HashSet;
 use std::f32::consts::{FRAC_PI_6, PI};
@@ -20,6 +21,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::build();
     app.add_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
+        .add_plugin(EasingsPlugin)
         .add_event::<GameStateEvent>()
         .init_resource::<GamepadState>()
         .add_resource(Scoreboard { score: 0, best: 0 })
@@ -31,8 +33,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .add_system(paddle_control_by_gamepad_system.system())
         .add_system(ball_movement_system.system())
         .add_system(update_paddle_transform.system())
+        .add_system(hit_to_fx.system())
+        .add_system(update_paddle_fx.system())
+        .add_system(custom_ease_system::<ImpactFx>.system())
         .add_system(start_system.system())
         .add_system(start_control_system.system())
+        .add_system(hit_as_score.system())
         .add_system(scoreboard_system.system());
     #[cfg(target_arch = "wasm32")]
     app.add_plugin(bevy_webgl2::WebGL2Plugin);
@@ -86,6 +92,25 @@ impl Paddle {
         };
     }
 }
+
+struct Hit {
+    direction: Vec3,
+}
+#[derive(Default, Clone, Debug)]
+struct ImpactFx {
+    mvt: Vec3,
+}
+
+impl Lerp for ImpactFx {
+    type Scalar = f32;
+
+    fn lerp(&self, other: &Self, scalar: &Self::Scalar) -> Self {
+        ImpactFx {
+            mvt: self.mvt.lerp(other.mvt.clone(), *scalar),
+        }
+    }
+}
+
 struct Ball {
     mvt_dir: Vec3,
     velocity_indicator: i32,
@@ -93,11 +118,12 @@ struct Ball {
 }
 
 impl Ball {
-    //TODO try a log or bezier curve
+    //TODO try a quadratic, log or bezier curve
     fn velocity(&self) -> f32 {
         410.0 + 10.0 * self.velocity_indicator as f32
     }
 }
+
 struct Scoreboard {
     score: usize,
     best: usize,
@@ -228,22 +254,20 @@ fn add_paddle(
             &StrokeOptions::default().with_line_width(height), //.with_line_cap(LineCap::Round)
                                                                //.with_line_join(LineJoin::Round)
         ))
-        .with_children(|parent| {
-            parent.spawn(primitive(
-                circle_material,
-                meshes,
-                ShapeType::Circle(radius),
-                TessellationMode::Stroke(&StrokeOptions::default().with_line_width(1.0)),
-                Vec3::zero().into(),
-            ));
-        })
         .with(Paddle {
             radius_origin: radius,
             half_surface_angle: surface_angle / 2.0,
             half_height: height / 2.0,
             angle_origin: 0.0,
             angle_speed: 0.0,
-        });
+        })
+        .spawn(primitive(
+            circle_material,
+            meshes,
+            ShapeType::Circle(radius),
+            TessellationMode::Stroke(&StrokeOptions::default().with_line_width(1.0)),
+            Vec3::zero().into(),
+        ));
 }
 
 fn setup(
@@ -479,10 +503,10 @@ fn positive_angle(angle: f32) -> f32 {
 }
 
 fn ball_movement_system(
+    commands: &mut Commands,
     time: Res<Time>,
-    mut scoreboard: ResMut<Scoreboard>,
     mut ball_query: Query<(&mut Ball, &mut Transform)>,
-    paddle_query: Query<&Paddle>,
+    paddle_query: Query<(Entity, &Paddle)>,
 ) {
     // clamp the timestep to stop the ball from escaping when the game starts
     let delta_seconds = f32::max(1.0 / 60.0, f32::min(1.0, time.delta_seconds()));
@@ -490,7 +514,8 @@ fn ball_movement_system(
     for (mut ball, mut transform) in ball_query.iter_mut() {
         let ball_translation_previous = transform.translation;
         transform.translation += (ball.velocity() * delta_seconds) * ball.mvt_dir;
-        for paddle in paddle_query.iter() {
+        for (entity, paddle) in paddle_query.iter() {
+            commands.remove_one::<Hit>(entity);
             let maybe_collision_point = find_ball_paddle_collision_point(
                 &transform.translation,
                 &ball_translation_previous,
@@ -498,6 +523,12 @@ fn ball_movement_system(
                 paddle,
             );
             if let Some((collision_point, ratio)) = maybe_collision_point {
+                commands.insert_one(
+                    entity,
+                    Hit {
+                        direction: ball.mvt_dir,
+                    },
+                );
                 let normal_surface =
                     Vec3::new(-collision_point.x, -collision_point.y, 0.0).normalize();
                 let speed_impact = 1.0 * paddle.angle_speed / (delta_seconds * 2.0 * PI);
@@ -512,7 +543,6 @@ fn ball_movement_system(
                 ball.velocity_indicator += 1;
                 transform.translation = collision_point
                     + ((1.0 - ratio) * (ball.velocity() * delta_seconds)) * ball.mvt_dir;
-                scoreboard.score += 1;
             }
         }
     }
@@ -521,6 +551,12 @@ fn ball_movement_system(
 fn reflect_2d(v: Vec3, n: Vec3) -> Vec3 {
     let d = v.x * n.x + v.y * n.y; //dot(v, n)
     Vec3::new(v.x - 2.0 * d * n.x, v.y - 2.0 * d * n.y, 0.0)
+}
+
+fn hit_as_score(mut scoreboard: ResMut<Scoreboard>, paddle_query: Query<(&Paddle, &Hit)>) {
+    for (_paddle, _hit) in paddle_query.iter() {
+        scoreboard.score += 1;
+    }
 }
 
 fn scoreboard_system(
@@ -540,6 +576,40 @@ fn update_paddle_transform(mut paddle_query: Query<(&Paddle, &mut Transform)>) {
     for (paddle, mut paddle_transform) in paddle_query.iter_mut() {
         paddle_transform.rotation =
             Quat::from_rotation_z(paddle.angle_origin - paddle.half_surface_angle);
+    }
+}
+
+fn update_paddle_fx(mut paddle_query: Query<(&Paddle, &ImpactFx, &mut Transform)>) {
+    for (_paddle, impact, mut paddle_transform) in paddle_query.iter_mut() {
+        paddle_transform.translation = impact.mvt;
+        dbg!(paddle_transform.translation);
+    }
+}
+
+fn hit_to_fx(commands: &mut Commands, paddle_query: Query<(Entity, &Paddle, &Hit)>) {
+    for (entity, _paddle, hit) in paddle_query.iter() {
+        let impact = ImpactFx { mvt: Vec3::zero() };
+        let e_impact = impact
+            .clone()
+            .ease_to(
+                ImpactFx {
+                    mvt: hit.direction * 20.0,
+                },
+                EaseFunction::BounceOut,
+                EasingType::Once {
+                    duration: std::time::Duration::from_millis(30),
+                },
+            )
+            .ease_to(
+                impact.clone(),
+                EaseFunction::BounceOut,
+                EasingType::Once {
+                    duration: std::time::Duration::from_millis(20),
+                },
+            );
+        dbg!("add impact");
+        commands.insert_one(entity, impact);
+        commands.insert_one(entity, e_impact);
     }
 }
 
