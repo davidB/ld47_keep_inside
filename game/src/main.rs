@@ -3,7 +3,6 @@
 
 use bevy::{
     // diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin},
-    input::mouse::MouseButtonInput,
     prelude::*,
     render::camera::Camera,
     window::CursorMoved,
@@ -64,7 +63,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 struct State {
-    mouse_button_event_reader: EventReader<MouseButtonInput>,
     cursor_moved_event_reader: EventReader<CursorMoved>,
     // need to identify the main camera
     camera_e: Entity,
@@ -306,7 +304,6 @@ fn setup(
         FRAC_PI_6,
     );
     commands.insert_resource(State {
-        mouse_button_event_reader: Default::default(),
         cursor_moved_event_reader: Default::default(),
         camera_e,
         game_state_event_reader: Default::default(),
@@ -368,16 +365,12 @@ fn start_system(
 }
 
 fn start_control_system(
-    mut state: ResMut<State>,
-    mouse_button_input_events: Res<Events<MouseButtonInput>>,
+    mouse_button_input: Res<Input<MouseButton>>,
     mut game_state_events: ResMut<Events<GameStateEvent>>,
     gamepad_manager: ResMut<GamepadState>,
     gamepad_inputs: Res<Input<GamepadButton>>,
 ) {
-    for _event in state
-        .mouse_button_event_reader
-        .iter(&mouse_button_input_events)
-    {
+    if mouse_button_input.just_released(MouseButton::Left) {
         // eprintln!("{:?}", event);
         game_state_events.send(GameStateEvent::Start)
     }
