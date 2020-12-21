@@ -1,0 +1,51 @@
+# genrule(
+#     name = "wasm-bindgen-cli",
+#     outs = ["wasm-bindgen"],
+#     cmd_bash = """
+#     cargo install --no-track --root . wasm-bindgen-cli
+#     """,
+#executable = True,
+# )
+
+genrule(
+    name = "site",
+    srcs = [
+        "index.html",
+        "//game:assets",
+        "//game:wasm",
+    ],
+    outs = ["www"],
+    cmd = """
+    mkdir -p $@
+    mkdir -p $@/assets
+    cp -R $(location index.html) $@/.
+    cp -R $(locations //game:assets) $@/assets/.
+    wasm-bindgen --out-dir $@ --out-name wasm --target web --no-typescript $(location //game:wasm)
+    ls -l $@
+    """,
+    # tools = [":wasm-bindgen-cli"],
+    visibility = ["//visibility:public"],
+)
+
+sh_binary(
+    name = "serve",
+    srcs = ["serve.sh"],
+    args = ["$(location :site)"],
+    data = [":site"],
+)
+
+genrule(
+    name = "archive",
+    srcs = [
+        ":site",
+    ],
+    outs = ["www.zip"],
+    cmd = """
+    # tar -czvf $@ --dereference -C $(location :site) .
+    ARCHIVE=$$(pwd)/$@
+    pushd $(location :site)
+    zip -r $${ARCHIVE} .
+    popd
+    """,
+    visibility = ["//visibility:public"],
+)

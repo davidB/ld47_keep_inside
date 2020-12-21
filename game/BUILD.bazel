@@ -1,0 +1,44 @@
+package(default_visibility = ["//visibility:public"])
+
+filegroup(
+    name = "assets",
+    srcs = glob(["assets/*"]),
+)
+
+# rust_binary(
+#     name = "game",
+#     srcs = ["src/main.rs"],
+#     data = [
+#         ":assets",
+#     ],
+#     deps = [
+#         "//game/cargo:bevy",
+#     ],
+#
+
+# genrule(
+#     name = "native",
+#     srcs = glob([
+#         "src/**.rs",
+#         "Cargo.*",
+#     ]),
+#     outs = ["target"],
+#     cmd = """
+#     cargo build --features native
+#     """,
+# )
+
+genrule(
+    name = "wasm",
+    srcs = glob([
+        "Cargo.*",
+        "src/*.rs",
+    ]),
+    outs = ["game.wasm"],
+    cmd_bash = """
+    pushd game
+    cargo build --features web --target wasm32-unknown-unknown --release
+    popd
+    cp game/target/wasm32-unknown-unknown/release/game.wasm $@
+    """,
+)

@@ -1,0 +1,32 @@
+# to login and create credentials
+# `bazel run //itch.io:butler login`
+# see [Pushing builds · The butler manual - itch.io](https://itch.io/docs/butler/pushing.html)
+
+genrule(
+    name = "butler",
+    srcs = ["butler.url"],
+    outs = ["butler_cmd"],
+    cmd_bash = """
+    curl -L -o d.zip $$(cat $<) && \\
+    unzip d.zip && \\
+    chmod +x butler && \\
+    mv butler $@ && \\
+    $@ -V
+    """,
+    executable = True,
+)
+
+#butler push directory user/game:channel
+# see [Pushing builds · The butler manual - itch.io](https://itch.io/docs/butler/pushing.html)
+genrule(
+    name = "publish-web",
+    srcs = [
+        "//:version",
+        "//web:archive",
+    ],
+    outs = ["publish-web.log"],
+    cmd_bash = """
+    $(location :butler) push --userversion-file $(location //:version) --if-changed $(location //web:archive) alchim31/keep-inside:web |tee $@
+    """,
+    tools = [":butler"],
+)

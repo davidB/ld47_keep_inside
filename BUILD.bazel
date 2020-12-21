@@ -1,0 +1,8 @@
+package(default_visibility = ["//visibility:public"])
+
+genrule(
+    name = "version",
+    srcs = [".git"],
+    outs = ["version.txt"],
+    cmd = "git --no-pager --git-dir=$< describe --always --dirty >$@",
+)

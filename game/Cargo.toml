@@ -9,6 +9,10 @@ repository = "https://github.com/davidB/ld47_keep_inside"
 homepage = "https://github.com/davidB/ld47_keep_inside"
 edition = "2018"
 
+[[bin]]
+name = "game"
+path = "src/main.rs"
+
 [features]
 default = [
     # "bevy/bevy_audio",
@@ -32,7 +36,7 @@ web = [
 bevy = {version="0.4", default-features=false}
 bevy_prototype_lyon = { git = "https://github.com/davidB/bevy_prototype_lyon", branch = "bevy_0.4"}
 bevy_easings = "0.3"
-winit = "0.24"
+# winit = "0.24"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
 bevy_webgl2 = "0.4"
@@ -58,3 +62,28 @@ opt-level = 'z'
 # Tells the compiler to use only one code generator instead of running several in parallel. Disabling parallel code generation makes the compilation slower but makes all optimizations possible.
 codegen-units = 1
 
+# Above this line should be the contents of your Cargo.toml file
+
+[package.metadata.raze]
+# The path relative path to the Bazel workspace root (location of
+# WORKSPACE.bazel/WORKSPACE file). If no workspace file is found,
+# the current working directory is used.
+workspace_path = "//game/cargo"
+package_aliases_dir = "cargo"
+
+# The set of targets to generate BUILD rules for.
+# targets = [
+#     # "x86_64-apple-darwin",
+#     # "x86_64-pc-windows-msvc",
+#     # "x86_64-unknown-linux-gnu",
+#     "wasm32-unknown-unknown",
+# ]
+target = "wasm32-unknown-unknown"
+
+# The two acceptable options are "Remote" and "Vendored" which
+# is used to idnicate whether the user is using a non-vendored or
+# vendored set of dependencies.
+genmode = "Remote"
+
+[package.metadata.raze.binary_deps]
+wasm-bindgen-cli = "0.2.68"
