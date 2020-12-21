@@ -11,7 +11,28 @@ And some evolutions, experimentations, wip since LD:
 - use bazel to build
 - host on itch.io
 
-## to plublish web on itch.io
+## Commands
+
+### To run on local desktop (for dev)
+
+```sh
+cd game
+cargo run --features native
+```
+
+Currently, using bazel for dev is not optimal, The regular rust toolchain for bazel (cargo-raze + rust_rules) doesn't work with bevy (see [How to combine features, platform and dependencies ? · Issue #326 · google/cargo-raze](https://github.com/google/cargo-raze/issues/326))
+
+### To run on local webbrowser (for dev)
+
+```sh
+# currently the bazel workspace doesn't install tools like basic-http-server
+cargo install basic-http-server
+bazel run //web:serve
+```
+
+Open http://localhost:4000/ into the browser
+
+### To publish web on itch.io
 
 ```sh
 bazel run //itch.io:butler login
