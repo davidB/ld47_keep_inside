@@ -26,7 +26,7 @@ genrule(
     ],
     outs = ["publish-web.log"],
     cmd_bash = """
-    $(location :butler) push --userversion-file $(location //:version) --if-changed $(location //web:archive) alchim31/keep-inside:web |tee $@
+    $(location :butler) push --userversion-file $(location //:version) $(location //web:archive) alchim31/keep-inside:web |tee $@
     """,
     tools = [":butler"],
 )
