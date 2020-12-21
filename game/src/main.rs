@@ -1,12 +1,13 @@
-// mod assets;
+// disable console opening on windows
+#![windows_subsystem = "windows"]
 
-// use self::assets::AssetHandles;
 use bevy::{
     // diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin},
     input::mouse::MouseButtonInput,
     prelude::*,
     render::camera::Camera,
     window::CursorMoved,
+    window::WindowMode,
 };
 use bevy_easings::*;
 use bevy_prototype_lyon::prelude::*;
@@ -20,6 +21,16 @@ use bevy_webgl2;
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut app = App::build();
     app.add_resource(Msaa { samples: 4 })
+        .add_resource(WindowDescriptor {
+            title: "Keep Inside".to_string(),
+            width: 800.,
+            height: 600.,
+            vsync: true,
+            resizable: true,
+            mode: WindowMode::Windowed,
+            //WindowMode::Fullscreen { use_size: true },
+            ..Default::default()
+        })
         .add_plugins(DefaultPlugins)
         .add_plugin(EasingsPlugin)
         .add_event::<GameStateEvent>()
