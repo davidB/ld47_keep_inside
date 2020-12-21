@@ -1,5 +1,7 @@
 # ld47_keep_inside
 
+The most recent version (playable online) is available on itch.io: [keep inside by alchim31](https://alchim31.itch.io/keep-inside)
+
 My game for Ludum Dare 47 (see release [compo](https://github.com/davidB/ld47_keep_inside/releases/tag/compo))
 
 And some evolutions, experimentations, wip since LD:
